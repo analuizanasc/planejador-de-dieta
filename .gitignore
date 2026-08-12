@@ -30,9 +30,9 @@ pnpm-debug.log*
 # Testes e cobertura
 coverage/
 .nyc_output/
-cypress/videos/
-cypress/screenshots/
-cypress/downloads/
+playwright-report/
+test-results/
+blob-report/
 
 # Cache
 .cache/
