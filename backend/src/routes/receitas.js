@@ -22,7 +22,7 @@ module.exports = function criarRotasReceitas(db) {
     asyncHandler(async (req, res) => {
       const { categoria } = req.query;
       if (categoria !== undefined) validarCategoria(categoria, 'categoria (query)');
-      res.json(repo.listarReceitas(db, { categoria }));
+      res.json(repo.listarReceitas(db, req.usuarioId, { categoria }));
     })
   );
 
@@ -30,7 +30,7 @@ module.exports = function criarRotasReceitas(db) {
     '/:id',
     asyncHandler(async (req, res) => {
       const id = parseId(req.params.id);
-      const receita = repo.buscarReceitaPorId(db, id);
+      const receita = repo.buscarReceitaPorId(db, req.usuarioId, id);
       if (!receita) throw new AppError(404, `Receita ${id} não encontrada`);
       res.json(receita);
     })
@@ -40,7 +40,7 @@ module.exports = function criarRotasReceitas(db) {
     '/',
     asyncHandler(async (req, res) => {
       const dados = validarReceitaPayload(req.body);
-      const receita = repo.criarReceita(db, dados);
+      const receita = repo.criarReceita(db, req.usuarioId, dados);
       res.status(201).json(receita);
     })
   );
@@ -50,7 +50,7 @@ module.exports = function criarRotasReceitas(db) {
     asyncHandler(async (req, res) => {
       const id = parseId(req.params.id);
       const dados = validarReceitaPayload(req.body);
-      const receita = repo.atualizarReceita(db, id, dados);
+      const receita = repo.atualizarReceita(db, req.usuarioId, id, dados);
       if (!receita) throw new AppError(404, `Receita ${id} não encontrada`);
       res.json(receita);
     })
@@ -60,7 +60,7 @@ module.exports = function criarRotasReceitas(db) {
     '/:id',
     asyncHandler(async (req, res) => {
       const id = parseId(req.params.id);
-      const removida = repo.deletarReceita(db, id);
+      const removida = repo.deletarReceita(db, req.usuarioId, id);
       if (!removida) throw new AppError(404, `Receita ${id} não encontrada`);
       res.status(204).end();
     })

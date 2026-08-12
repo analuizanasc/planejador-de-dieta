@@ -1,8 +1,20 @@
 PRAGMA foreign_keys = ON;
 
 -- ============================================================
--- Tabelas de domínio (enums normalizados, reutilizados entre
--- Receita, Cardapio e PreferenciaUsuario)
+-- Usuarios
+-- ============================================================
+
+CREATE TABLE usuarios (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  email      TEXT NOT NULL UNIQUE,
+  senha_hash TEXT NOT NULL,
+  nome       TEXT NOT NULL,
+  criado_em  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ============================================================
+-- Tabelas de domínio (enums normalizados, globais — não pertencem
+-- a um usuário específico)
 -- ============================================================
 
 CREATE TABLE categorias (
@@ -27,17 +39,19 @@ INSERT INTO restricoes (codigo, nome) VALUES
   ('acucar_refinado', 'Açúcar refinado');
 
 -- ============================================================
--- Receita
+-- Receita (escopada por usuário)
 -- ============================================================
 
 CREATE TABLE receitas (
   id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario_id        INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
   nome              TEXT NOT NULL,
   categoria         TEXT NOT NULL REFERENCES categorias(codigo),
   calorias          INTEGER NOT NULL CHECK (calorias >= 0),
   permite_repeticao INTEGER NOT NULL DEFAULT 0 CHECK (permite_repeticao IN (0, 1))
 );
 
+CREATE INDEX idx_receitas_usuario ON receitas(usuario_id);
 CREATE INDEX idx_receitas_categoria ON receitas(categoria);
 
 -- ingredientes: array -> tabela filha (ordem preserva a sequência original)
@@ -60,47 +74,40 @@ CREATE TABLE receita_restricoes (
 CREATE INDEX idx_receita_restricoes_restricao ON receita_restricoes(restricao);
 
 -- ============================================================
--- PreferenciaUsuario (singleton — app de usuário único)
+-- PreferenciaUsuario (uma linha por usuário)
 -- ============================================================
 
 CREATE TABLE preferencia_usuario (
-  id            INTEGER PRIMARY KEY CHECK (id = 1),
+  usuario_id    INTEGER PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
   meta_calorica INTEGER CHECK (meta_calorica IS NULL OR meta_calorica > 0)
 );
 
-INSERT INTO preferencia_usuario (id, meta_calorica) VALUES (1, NULL);
-
 -- categorias_ativas: array -> tabela associativa N:N com categorias
 CREATE TABLE preferencia_categorias_ativas (
-  preferencia_id INTEGER NOT NULL REFERENCES preferencia_usuario(id) ON DELETE CASCADE,
-  categoria      TEXT NOT NULL REFERENCES categorias(codigo),
-  PRIMARY KEY (preferencia_id, categoria)
+  usuario_id INTEGER NOT NULL REFERENCES preferencia_usuario(usuario_id) ON DELETE CASCADE,
+  categoria  TEXT NOT NULL REFERENCES categorias(codigo),
+  PRIMARY KEY (usuario_id, categoria)
 );
-
--- café, almoço e jantar ativos por padrão (regra de negócio 2); lanche fica de fora até o usuário ativar
-INSERT INTO preferencia_categorias_ativas (preferencia_id, categoria) VALUES
-  (1, 'cafe'),
-  (1, 'almoco'),
-  (1, 'jantar');
 
 -- restricoes: array -> tabela associativa N:N com restricoes
 CREATE TABLE preferencia_restricoes (
-  preferencia_id INTEGER NOT NULL REFERENCES preferencia_usuario(id) ON DELETE CASCADE,
-  restricao      TEXT NOT NULL REFERENCES restricoes(codigo),
-  PRIMARY KEY (preferencia_id, restricao)
+  usuario_id INTEGER NOT NULL REFERENCES preferencia_usuario(usuario_id) ON DELETE CASCADE,
+  restricao  TEXT NOT NULL REFERENCES restricoes(codigo),
+  PRIMARY KEY (usuario_id, restricao)
 );
 
 -- ============================================================
--- Cardapio
+-- Cardapio (escopado por usuário)
 -- ============================================================
 
 CREATE TABLE cardapio (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
   dia        DATE NOT NULL,
   categoria  TEXT NOT NULL REFERENCES categorias(codigo),
   receita_id INTEGER NOT NULL REFERENCES receitas(id),
-  UNIQUE (dia, categoria)
+  UNIQUE (usuario_id, dia, categoria)
 );
 
-CREATE INDEX idx_cardapio_dia ON cardapio(dia);
+CREATE INDEX idx_cardapio_usuario_dia ON cardapio(usuario_id, dia);
 CREATE INDEX idx_cardapio_receita ON cardapio(receita_id);

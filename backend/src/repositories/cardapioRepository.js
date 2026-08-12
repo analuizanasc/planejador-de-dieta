@@ -5,50 +5,56 @@ const { diaAnterior } = require('../utils/datas');
 
 const ORDEM_CATEGORIA = "CASE categoria WHEN 'cafe' THEN 1 WHEN 'almoco' THEN 2 WHEN 'jantar' THEN 3 WHEN 'lanche' THEN 4 END";
 
-function montarEntrada(db, row) {
+function montarEntrada(db, usuarioId, row) {
   return {
     dia: row.dia,
     categoria: row.categoria,
-    receita: buscarReceitaPorId(db, row.receita_id),
+    receita: buscarReceitaPorId(db, usuarioId, row.receita_id),
   };
 }
 
 // Mapa categoria -> receita_id usado no dia imediatamente anterior a `primeiroDia`,
 // necessário para o algoritmo respeitar RN1 na fronteira do período gerado.
-function obterHistoricoAnterior(db, primeiroDia) {
+function obterHistoricoAnterior(db, usuarioId, primeiroDia) {
   const dataAnterior = diaAnterior(primeiroDia);
-  const rows = db.prepare('SELECT categoria, receita_id FROM cardapio WHERE dia = ?').all(dataAnterior);
+  const rows = db
+    .prepare('SELECT categoria, receita_id FROM cardapio WHERE usuario_id = ? AND dia = ?')
+    .all(usuarioId, dataAnterior);
   return Object.fromEntries(rows.map((r) => [r.categoria, r.receita_id]));
 }
 
-function persistirCardapio(db, entradas) {
+function persistirCardapio(db, usuarioId, entradas) {
   const upsert = db.prepare(`
-    INSERT INTO cardapio (dia, categoria, receita_id) VALUES (?, ?, ?)
-    ON CONFLICT(dia, categoria) DO UPDATE SET receita_id = excluded.receita_id
+    INSERT INTO cardapio (usuario_id, dia, categoria, receita_id) VALUES (?, ?, ?, ?)
+    ON CONFLICT(usuario_id, dia, categoria) DO UPDATE SET receita_id = excluded.receita_id
   `);
   const tx = db.transaction((itens) => {
     for (const item of itens) {
-      upsert.run(item.dia, item.categoria, item.receita.id);
+      upsert.run(usuarioId, item.dia, item.categoria, item.receita.id);
     }
   });
   tx(entradas);
 }
 
-function upsertManual(db, dia, categoria, receitaId) {
+function upsertManual(db, usuarioId, dia, categoria, receitaId) {
   db.prepare(
-    `INSERT INTO cardapio (dia, categoria, receita_id) VALUES (?, ?, ?)
-     ON CONFLICT(dia, categoria) DO UPDATE SET receita_id = excluded.receita_id`
-  ).run(dia, categoria, receitaId);
+    `INSERT INTO cardapio (usuario_id, dia, categoria, receita_id) VALUES (?, ?, ?, ?)
+     ON CONFLICT(usuario_id, dia, categoria) DO UPDATE SET receita_id = excluded.receita_id`
+  ).run(usuarioId, dia, categoria, receitaId);
 
-  const row = db.prepare('SELECT * FROM cardapio WHERE dia = ? AND categoria = ?').get(dia, categoria);
-  return montarEntrada(db, row);
+  const row = db
+    .prepare('SELECT * FROM cardapio WHERE usuario_id = ? AND dia = ? AND categoria = ?')
+    .get(usuarioId, dia, categoria);
+  return montarEntrada(db, usuarioId, row);
 }
 
-function buscarPorIntervalo(db, dataInicio, dataFim) {
+function buscarPorIntervalo(db, usuarioId, dataInicio, dataFim) {
   const rows = db
-    .prepare(`SELECT * FROM cardapio WHERE dia BETWEEN ? AND ? ORDER BY dia, ${ORDEM_CATEGORIA}`)
-    .all(dataInicio, dataFim);
-  return rows.map((row) => montarEntrada(db, row));
+    .prepare(
+      `SELECT * FROM cardapio WHERE usuario_id = ? AND dia BETWEEN ? AND ? ORDER BY dia, ${ORDEM_CATEGORIA}`
+    )
+    .all(usuarioId, dataInicio, dataFim);
+  return rows.map((row) => montarEntrada(db, usuarioId, row));
 }
 
 module.exports = {

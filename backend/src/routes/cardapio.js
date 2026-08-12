@@ -51,14 +51,14 @@ module.exports = function criarRotasCardapio(db) {
     asyncHandler(async (req, res) => {
       const dias = resolverDiasSolicitados(req.body);
 
-      const preferencias = preferenciasRepo.buscarPreferencias(db);
-      const receitas = receitasRepo.listarReceitas(db);
-      const historicoAnterior = cardapioRepo.obterHistoricoAnterior(db, dias[0]);
+      const preferencias = preferenciasRepo.buscarPreferencias(db, req.usuarioId);
+      const receitas = receitasRepo.listarReceitas(db, req.usuarioId);
+      const historicoAnterior = cardapioRepo.obterHistoricoAnterior(db, req.usuarioId, dias[0]);
 
       const resultado = gerarCardapio({ receitas, preferencias, dias, historicoAnterior });
 
       if (resultado.cardapio.length > 0) {
-        cardapioRepo.persistirCardapio(db, resultado.cardapio);
+        cardapioRepo.persistirCardapio(db, req.usuarioId, resultado.cardapio);
       }
 
       res.status(201).json(resultado);
@@ -77,7 +77,7 @@ module.exports = function criarRotasCardapio(db) {
         throw new AppError(400, 'receita_id é obrigatório e deve ser um inteiro positivo');
       }
 
-      const receita = receitasRepo.buscarReceitaPorId(db, receitaId);
+      const receita = receitasRepo.buscarReceitaPorId(db, req.usuarioId, receitaId);
       if (!receita) throw new AppError(404, `Receita ${receitaId} não encontrada`);
       if (receita.categoria !== categoria) {
         throw new AppError(
@@ -86,7 +86,7 @@ module.exports = function criarRotasCardapio(db) {
         );
       }
 
-      const entrada = cardapioRepo.upsertManual(db, dia, categoria, receitaId);
+      const entrada = cardapioRepo.upsertManual(db, req.usuarioId, dia, categoria, receitaId);
       res.json(entrada);
     })
   );
@@ -110,7 +110,7 @@ module.exports = function criarRotasCardapio(db) {
         periodo = { tipo: 'mes', inicio, fim };
       }
 
-      const cardapio = cardapioRepo.buscarPorIntervalo(db, periodo.inicio, periodo.fim);
+      const cardapio = cardapioRepo.buscarPorIntervalo(db, req.usuarioId, periodo.inicio, periodo.fim);
       res.json({ periodo, cardapio });
     })
   );

@@ -5,6 +5,7 @@ const { CATEGORIAS_VALIDAS } = require('../services/geradorCardapio');
 
 const RESTRICOES_VALIDAS = ['gluten', 'lactose', 'acucar_refinado'];
 const DATA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function isDataValida(valor) {
   if (typeof valor !== 'string' || !DATA_REGEX.test(valor)) return false;
@@ -150,6 +151,42 @@ function validarPreferenciasPayload(body) {
   return dados;
 }
 
+function validarRegistroPayload(body) {
+  if (!body || typeof body !== 'object') {
+    throw new AppError(400, 'Corpo da requisição inválido');
+  }
+
+  if (typeof body.email !== 'string' || !EMAIL_REGEX.test(body.email.trim())) {
+    throw new AppError(400, 'email é obrigatório e deve ter um formato válido');
+  }
+
+  if (typeof body.senha !== 'string' || body.senha.length < 8) {
+    throw new AppError(400, 'senha é obrigatória e deve ter ao menos 8 caracteres');
+  }
+
+  if (typeof body.nome !== 'string' || body.nome.trim().length === 0) {
+    throw new AppError(400, 'nome é obrigatório e deve ser uma string não vazia');
+  }
+
+  return { email: body.email.trim().toLowerCase(), senha: body.senha, nome: body.nome.trim() };
+}
+
+function validarLoginPayload(body) {
+  if (!body || typeof body !== 'object') {
+    throw new AppError(400, 'Corpo da requisição inválido');
+  }
+
+  if (typeof body.email !== 'string' || body.email.trim().length === 0) {
+    throw new AppError(400, 'email é obrigatório');
+  }
+
+  if (typeof body.senha !== 'string' || body.senha.length === 0) {
+    throw new AppError(400, 'senha é obrigatória');
+  }
+
+  return { email: body.email.trim().toLowerCase(), senha: body.senha };
+}
+
 module.exports = {
   RESTRICOES_VALIDAS,
   isDataValida,
@@ -158,4 +195,6 @@ module.exports = {
   validarArrayDeStrings,
   validarReceitaPayload,
   validarPreferenciasPayload,
+  validarRegistroPayload,
+  validarLoginPayload,
 };

@@ -11,7 +11,7 @@ module.exports = function criarRotasPreferencias(db) {
   router.get(
     '/',
     asyncHandler(async (req, res) => {
-      res.json(repo.buscarPreferencias(db));
+      res.json(repo.buscarPreferencias(db, req.usuarioId));
     })
   );
 
@@ -19,7 +19,7 @@ module.exports = function criarRotasPreferencias(db) {
     '/',
     asyncHandler(async (req, res) => {
       const dados = validarPreferenciasPayload(req.body);
-      res.json(repo.atualizarPreferencias(db, dados));
+      res.json(repo.atualizarPreferencias(db, req.usuarioId, dados));
     })
   );
 

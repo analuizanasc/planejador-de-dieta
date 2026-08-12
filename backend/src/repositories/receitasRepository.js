@@ -22,11 +22,11 @@ function montarCompleta(db, row) {
   };
 }
 
-function listarReceitas(db, { categoria } = {}) {
-  let sql = 'SELECT * FROM receitas';
-  const params = [];
+function listarReceitas(db, usuarioId, { categoria } = {}) {
+  let sql = 'SELECT * FROM receitas WHERE usuario_id = ?';
+  const params = [usuarioId];
   if (categoria) {
-    sql += ' WHERE categoria = ?';
+    sql += ' AND categoria = ?';
     params.push(categoria);
   }
   sql += ' ORDER BY id';
@@ -36,18 +36,18 @@ function listarReceitas(db, { categoria } = {}) {
     .map((row) => montarCompleta(db, row));
 }
 
-function buscarReceitaPorId(db, id) {
-  const row = db.prepare('SELECT * FROM receitas WHERE id = ?').get(id);
+function buscarReceitaPorId(db, usuarioId, id) {
+  const row = db.prepare('SELECT * FROM receitas WHERE id = ? AND usuario_id = ?').get(id, usuarioId);
   return montarCompleta(db, row);
 }
 
-function criarReceita(db, dados) {
+function criarReceita(db, usuarioId, dados) {
   const tx = db.transaction((d) => {
     const info = db
       .prepare(
-        'INSERT INTO receitas (nome, categoria, calorias, permite_repeticao) VALUES (?, ?, ?, ?)'
+        'INSERT INTO receitas (usuario_id, nome, categoria, calorias, permite_repeticao) VALUES (?, ?, ?, ?, ?)'
       )
-      .run(d.nome, d.categoria, d.calorias, d.permite_repeticao ? 1 : 0);
+      .run(usuarioId, d.nome, d.categoria, d.calorias, d.permite_repeticao ? 1 : 0);
     const id = info.lastInsertRowid;
 
     const inserirIngrediente = db.prepare(
@@ -64,11 +64,11 @@ function criarReceita(db, dados) {
   });
 
   const id = tx(dados);
-  return buscarReceitaPorId(db, id);
+  return buscarReceitaPorId(db, usuarioId, id);
 }
 
-function atualizarReceita(db, id, dados) {
-  const existente = db.prepare('SELECT id FROM receitas WHERE id = ?').get(id);
+function atualizarReceita(db, usuarioId, id, dados) {
+  const existente = db.prepare('SELECT id FROM receitas WHERE id = ? AND usuario_id = ?').get(id, usuarioId);
   if (!existente) return null;
 
   const tx = db.transaction((d) => {
@@ -91,11 +91,11 @@ function atualizarReceita(db, id, dados) {
   });
 
   tx(dados);
-  return buscarReceitaPorId(db, id);
+  return buscarReceitaPorId(db, usuarioId, id);
 }
 
-function deletarReceita(db, id) {
-  const info = db.prepare('DELETE FROM receitas WHERE id = ?').run(id);
+function deletarReceita(db, usuarioId, id) {
+  const info = db.prepare('DELETE FROM receitas WHERE id = ? AND usuario_id = ?').run(id, usuarioId);
   return info.changes > 0;
 }
 
