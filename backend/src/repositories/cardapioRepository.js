@@ -10,6 +10,7 @@ function montarEntrada(db, usuarioId, row) {
     dia: row.dia,
     categoria: row.categoria,
     receita: buscarReceitaPorId(db, usuarioId, row.receita_id),
+    origem: row.origem,
   };
 }
 
@@ -25,8 +26,8 @@ function obterHistoricoAnterior(db, usuarioId, primeiroDia) {
 
 function persistirCardapio(db, usuarioId, entradas) {
   const upsert = db.prepare(`
-    INSERT INTO cardapio (usuario_id, dia, categoria, receita_id) VALUES (?, ?, ?, ?)
-    ON CONFLICT(usuario_id, dia, categoria) DO UPDATE SET receita_id = excluded.receita_id
+    INSERT INTO cardapio (usuario_id, dia, categoria, receita_id, origem) VALUES (?, ?, ?, ?, 'gerado')
+    ON CONFLICT(usuario_id, dia, categoria) DO UPDATE SET receita_id = excluded.receita_id, origem = excluded.origem
   `);
   const tx = db.transaction((itens) => {
     for (const item of itens) {
@@ -38,8 +39,8 @@ function persistirCardapio(db, usuarioId, entradas) {
 
 function upsertManual(db, usuarioId, dia, categoria, receitaId) {
   db.prepare(
-    `INSERT INTO cardapio (usuario_id, dia, categoria, receita_id) VALUES (?, ?, ?, ?)
-     ON CONFLICT(usuario_id, dia, categoria) DO UPDATE SET receita_id = excluded.receita_id`
+    `INSERT INTO cardapio (usuario_id, dia, categoria, receita_id, origem) VALUES (?, ?, ?, ?, 'manual')
+     ON CONFLICT(usuario_id, dia, categoria) DO UPDATE SET receita_id = excluded.receita_id, origem = excluded.origem`
   ).run(usuarioId, dia, categoria, receitaId);
 
   const row = db

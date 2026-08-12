@@ -106,6 +106,7 @@ CREATE TABLE cardapio (
   dia        DATE NOT NULL,
   categoria  TEXT NOT NULL REFERENCES categorias(codigo),
   receita_id INTEGER NOT NULL REFERENCES receitas(id),
+  origem     TEXT NOT NULL DEFAULT 'gerado' CHECK (origem IN ('gerado', 'manual')),
   UNIQUE (usuario_id, dia, categoria)
 );
 

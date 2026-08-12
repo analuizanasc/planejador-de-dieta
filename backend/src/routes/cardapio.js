@@ -61,7 +61,12 @@ module.exports = function criarRotasCardapio(db) {
         cardapioRepo.persistirCardapio(db, req.usuarioId, resultado.cardapio);
       }
 
-      res.status(201).json(resultado);
+      // geradorCardapio.js é puro e não conhece "origem" (é conceito de persistência,
+      // não de geração) — anota aqui, na borda da rota, para a resposta ficar
+      // consistente com o shape retornado por GET/PUT /cardapio.
+      const cardapioComOrigem = resultado.cardapio.map((entrada) => ({ ...entrada, origem: 'gerado' }));
+
+      res.status(201).json({ cardapio: cardapioComOrigem, erros: resultado.erros });
     })
   );
 

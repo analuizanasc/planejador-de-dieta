@@ -180,6 +180,48 @@ describe('/cardapio', () => {
       expect(entradaCafe.receita.id).toBe(outraOpcaoDeCafe);
     });
 
+    test('origem: entradas de POST /cardapio/gerar vêm marcadas como "gerado"', async () => {
+      await criarReceitasPadrao();
+      const resposta = await auth(request(app).post('/cardapio/gerar')).send({ dias: ['2026-08-10'] });
+      expect(resposta.body.cardapio.every((c) => c.origem === 'gerado')).toBe(true);
+    });
+
+    test('origem: uma entrada editada manualmente fica marcada como "manual" (GET reflete)', async () => {
+      const { cafeA, cafeB } = await criarReceitasPadrao();
+      await auth(request(app).post('/cardapio/gerar')).send({ dias: ['2026-08-10'] });
+      const cafeAtual = (await auth(request(app).get('/cardapio?semana=2026-08-10'))).body.cardapio.find(
+        (c) => c.categoria === 'cafe'
+      );
+      const outraOpcao = cafeAtual.receita.id === cafeA.id ? cafeB.id : cafeA.id;
+
+      const respostaPut = await auth(request(app).put('/cardapio/2026-08-10/cafe')).send({
+        receita_id: outraOpcao,
+      });
+      expect(respostaPut.body.origem).toBe('manual');
+
+      const respostaGet = await auth(request(app).get('/cardapio?semana=2026-08-10'));
+      const entradaCafe = respostaGet.body.cardapio.find((c) => c.categoria === 'cafe');
+      expect(entradaCafe.origem).toBe('manual');
+    });
+
+    test('origem: gerar novamente sobre um período com edição manual reverte a origem para "gerado"', async () => {
+      const { cafeA, cafeB } = await criarReceitasPadrao();
+      await auth(request(app).post('/cardapio/gerar')).send({ dias: ['2026-08-10'] });
+      const cafeAtual = (await auth(request(app).get('/cardapio?semana=2026-08-10'))).body.cardapio.find(
+        (c) => c.categoria === 'cafe'
+      );
+      const outraOpcao = cafeAtual.receita.id === cafeA.id ? cafeB.id : cafeA.id;
+      await auth(request(app).put('/cardapio/2026-08-10/cafe')).send({ receita_id: outraOpcao });
+
+      // gera de novo sobre o mesmo dia — comportamento de backend já existente
+      // (sobrescreve), a coluna origem só torna isso visível/rastreável.
+      await auth(request(app).post('/cardapio/gerar')).send({ dias: ['2026-08-10'] });
+
+      const respostaGet = await auth(request(app).get('/cardapio?semana=2026-08-10'));
+      const entradaCafe = respostaGet.body.cardapio.find((c) => c.categoria === 'cafe');
+      expect(entradaCafe.origem).toBe('gerado');
+    });
+
     test('receita de categoria incompatível com a rota retorna 400 com mensagem exata', async () => {
       const { almoco } = await criarReceitasPadrao();
       const resposta = await auth(request(app).put('/cardapio/2026-08-10/cafe')).send({

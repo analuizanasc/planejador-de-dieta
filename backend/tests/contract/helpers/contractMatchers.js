@@ -31,10 +31,11 @@ function assertPreferenciasShape(preferencias) {
 }
 
 function assertCardapioEntradaShape(entrada) {
-  assertShapeExata(entrada, ['dia', 'categoria', 'receita']);
+  assertShapeExata(entrada, ['dia', 'categoria', 'receita', 'origem']);
   expect(typeof entrada.dia).toBe('string');
   expect(typeof entrada.categoria).toBe('string');
   assertReceitaShape(entrada.receita);
+  expect(['gerado', 'manual']).toContain(entrada.origem);
 }
 
 function assertUsuarioPublicoShape(usuario) {
