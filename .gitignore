@@ -1,0 +1,49 @@
+# Dependências
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+build/
+.vite/
+
+# Banco de dados SQLite
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testes e cobertura
+coverage/
+.nyc_output/
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+
+# Cache
+.cache/
+.eslintcache
+.npm
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
