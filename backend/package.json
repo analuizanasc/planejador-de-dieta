@@ -1,0 +1,11 @@
+{
+  "name": "planejador-dieta-backend",
+  "version": "0.1.0",
+  "description": "API do planejador de dieta (Node + Express + SQLite)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "echo \"testes serão configurados na etapa 4\" && exit 0"
+  },
+  "license": "MIT"
+}
