@@ -4,7 +4,7 @@ module.exports = {
   testEnvironment: 'node',
   rootDir: '.',
   testMatch: ['<rootDir>/tests/**/*.test.js'],
-  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/tests/e2e/'],
+  testPathIgnorePatterns: ['/node_modules/'],
   setupFiles: ['<rootDir>/tests/setupEnv.js'],
   collectCoverage: false,
   collectCoverageFrom: ['src/**/*.js', '!src/server.js'],

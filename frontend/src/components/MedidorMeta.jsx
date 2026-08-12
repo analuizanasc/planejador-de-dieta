@@ -12,7 +12,7 @@ export function MedidorMeta({ total, meta }) {
           style={{ width: `${proporcao * 100}%` }}
         />
       </div>
-      <span className={`numero-caloria ${styles.legenda}`}>
+      <span className={`numero-caloria ${styles.legenda}`} data-testid="medidor-meta-legenda" data-total={total} data-meta={meta}>
         {total} / {meta} kcal
       </span>
     </div>

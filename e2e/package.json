@@ -1,0 +1,13 @@
+{
+  "name": "planejador-dieta-e2e",
+  "version": "0.1.0",
+  "description": "Testes E2E (Playwright) do planejador de dieta — orquestra backend + frontend juntos",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

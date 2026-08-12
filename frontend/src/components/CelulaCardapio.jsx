@@ -7,9 +7,10 @@ import styles from './CelulaCardapio.module.css';
 // a entrada veio de PUT /cardapio/:dia/:categoria (origem === 'manual'), em
 // vez de geração automática — informação real vinda do backend, não estado
 // local (por isso sobrevive a reload).
-export function CelulaCardapio({ categoria, entrada, motivoErro, opcoesReceita, aoEditar }) {
+export function CelulaCardapio({ dia, categoria, entrada, motivoErro, opcoesReceita, aoEditar }) {
   const [editando, setEditando] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const testId = `celula-${categoria}-${dia}`;
 
   async function aoEscolher(receitaId) {
     setSalvando(true);
@@ -23,7 +24,7 @@ export function CelulaCardapio({ categoria, entrada, motivoErro, opcoesReceita, 
 
   if (editando) {
     return (
-      <div className={styles.celula}>
+      <div className={styles.celula} data-testid={testId}>
         <Select
           valor={entrada?.receita.id}
           aoMudar={aoEscolher}
@@ -37,7 +38,13 @@ export function CelulaCardapio({ categoria, entrada, motivoErro, opcoesReceita, 
 
   if (!entrada) {
     return (
-      <button type="button" className={`${styles.celula} ${styles.vazia}`} onClick={() => setEditando(true)} title={motivoErro}>
+      <button
+        type="button"
+        className={`${styles.celula} ${styles.vazia}`}
+        onClick={() => setEditando(true)}
+        title={motivoErro}
+        data-testid={testId}
+      >
         <CategoriaSelo categoria={categoria} tamanho="sm" />
         <span className={styles.textoVazio}>Sem opção compatível</span>
       </button>
@@ -45,9 +52,13 @@ export function CelulaCardapio({ categoria, entrada, motivoErro, opcoesReceita, 
   }
 
   return (
-    <button type="button" className={styles.celula} onClick={() => setEditando(true)}>
+    <button type="button" className={styles.celula} onClick={() => setEditando(true)} data-testid={testId}>
       <CategoriaSelo categoria={categoria} tamanho="sm" />
-      <span className={`${styles.nomeReceita} ${entrada.origem === 'manual' ? styles.editadaManualmente : ''}`}>
+      <span
+        className={`${styles.nomeReceita} ${entrada.origem === 'manual' ? styles.editadaManualmente : ''}`}
+        data-testid="nome-receita"
+        data-origem={entrada.origem}
+      >
         {entrada.receita.nome}
       </span>
       <span className={`numero-caloria ${styles.calorias}`}>{entrada.receita.calorias} kcal</span>

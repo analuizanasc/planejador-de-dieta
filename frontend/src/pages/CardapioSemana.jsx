@@ -119,6 +119,7 @@ export function CardapioSemana() {
                 return (
                   <CelulaCardapio
                     key={`${dia}-${categoria}`}
+                    dia={dia}
                     categoria={categoria}
                     entrada={entrada}
                     motivoErro={erroCelula?.motivo}
