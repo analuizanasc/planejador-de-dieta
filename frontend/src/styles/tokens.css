@@ -1,0 +1,89 @@
+/*
+  Direção: papel de caderno de cozinha, não dashboard de SaaS. Quem usa isso
+  decide o que vai comer na semana e lida com restrição alimentar de verdade
+  — o tom é quente e editorial, nunca clínico.
+
+  As cores das 4 categorias de refeição seguem o ritmo do dia: café (tostado,
+  claro, manhã) → almoço (verde-erva, meio-dia) → jantar (pinho profundo,
+  fim de dia) → lanche (terracota, a qualquer hora). Ver src/styles/categorias.js.
+*/
+
+:root {
+  /* Superfícies — papel-creme, nunca branco puro */
+  --papel: #f6f1e3;
+  --papel-elevado: #fffcf3;
+  --papel-inset: #ece4cf;
+
+  /* Hierarquia de texto — tons quentes derivados da tinta, não cinza-frio */
+  --tinta-primaria: #1d1811;
+  --tinta-secundaria: #4a4030;
+  --tinta-terciaria: #7a6f58;
+  --tinta-muted: #a89c82;
+  --tinta-sobre-escuro: #f6f1e3;
+
+  /* Bordas — opacidade baixa sobre a tinta, progressão de ênfase */
+  --borda-suave: rgba(29, 24, 17, 0.08);
+  --borda: rgba(29, 24, 17, 0.14);
+  --borda-enfase: rgba(29, 24, 17, 0.28);
+
+  /* Marca (do wispr) */
+  --lavanda: #c9b6ef;
+  --lavanda-forte: #8a68d6;
+  --lavanda-fundo: #efe7fb;
+  --pinho: #163229;
+  --pinho-forte: #0d1f19;
+
+  /* Semânticos (do domínio de comida) */
+  --erva: #5c8a4a;
+  --erva-fundo: #e6eedd;
+  --vinho: #7a2e3a;
+  --vinho-fundo: #f3e1e2;
+  --terracota: #c15b3a;
+  --terracota-fundo: #f6e4dc;
+  --tostado: #ad8a4e;
+  --tostado-fundo: #f2e9d4;
+
+  /* Foco/erro */
+  --anel-foco: #8a68d6;
+  --erro: #7a2e3a;
+
+  /* Sombras — quentes, nunca cinza */
+  --sombra-sm: 0 1px 2px rgba(29, 24, 17, 0.07);
+  --sombra-md: 0 6px 20px rgba(29, 24, 17, 0.10);
+  --sombra-lg: 0 16px 40px rgba(29, 24, 17, 0.16);
+
+  /* Raio — pílulas em controles, cantos médios em cards */
+  --raio-sm: 10px;
+  --raio-md: 16px;
+  --raio-lg: 24px;
+  --raio-pilula: 999px;
+
+  /* Espaçamento — base 4px */
+  --espaco-1: 4px;
+  --espaco-2: 8px;
+  --espaco-3: 12px;
+  --espaco-4: 16px;
+  --espaco-5: 20px;
+  --espaco-6: 24px;
+  --espaco-8: 32px;
+  --espaco-10: 40px;
+  --espaco-12: 48px;
+  --espaco-16: 64px;
+
+  /* Tipografia */
+  --fonte-display: 'Fraunces', Georgia, serif;
+  --fonte-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --fonte-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  --texto-eyebrow: 700 12px/1.4 var(--fonte-ui);
+  --tracking-eyebrow: 0.14em;
+  --texto-display-lg: 400 52px/1.05 var(--fonte-display);
+  --texto-display-md: 400 32px/1.15 var(--fonte-display);
+  --texto-display-sm: 500 22px/1.3 var(--fonte-ui);
+  --texto-corpo: 400 16px/1.5 var(--fonte-ui);
+  --texto-pequeno: 400 14px/1.5 var(--fonte-ui);
+  --texto-legenda: 500 12px/1.4 var(--fonte-ui);
+
+  --transicao-rapida: 120ms ease-out;
+  --transicao-media: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}

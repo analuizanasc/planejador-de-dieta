@@ -1,0 +1,76 @@
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-2);
+  border-radius: var(--raio-pilula);
+  font-weight: 600;
+  border: 1.5px solid transparent;
+  transition: transform var(--transicao-rapida), box-shadow var(--transicao-rapida), background var(--transicao-rapida);
+  white-space: nowrap;
+}
+
+.botao:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.botao:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Tamanhos */
+.md {
+  padding: var(--espaco-3) var(--espaco-6);
+  font-size: 15px;
+}
+
+.sm {
+  padding: var(--espaco-2) var(--espaco-4);
+  font-size: 13px;
+}
+
+/* Variantes */
+.primario {
+  background: var(--lavanda);
+  color: var(--tinta-primaria);
+  border-color: var(--tinta-primaria);
+  box-shadow: var(--sombra-sm);
+}
+
+.primario:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-md);
+}
+
+.secundario {
+  background: transparent;
+  color: var(--pinho);
+  border-color: var(--borda-enfase);
+}
+
+.secundario:hover:not(:disabled) {
+  background: var(--papel-inset);
+}
+
+.perigo {
+  background: var(--vinho-fundo);
+  color: var(--vinho);
+  border-color: transparent;
+}
+
+.perigo:hover:not(:disabled) {
+  background: var(--vinho);
+  color: var(--tinta-sobre-escuro);
+}
+
+.fantasma {
+  background: transparent;
+  color: var(--tinta-secundaria);
+  border-color: transparent;
+}
+
+.fantasma:hover:not(:disabled) {
+  background: var(--papel-inset);
+  color: var(--tinta-primaria);
+}

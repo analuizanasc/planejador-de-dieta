@@ -1,0 +1,21 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-5);
+}
+
+.rodape {
+  text-align: center;
+  font-size: 13px;
+  color: var(--tinta-terciaria);
+}
+
+.rodape a {
+  color: var(--lavanda-forte);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.rodape a:hover {
+  text-decoration: underline;
+}

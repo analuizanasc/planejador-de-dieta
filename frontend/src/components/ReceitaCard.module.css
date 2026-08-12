@@ -1,0 +1,66 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  padding: var(--espaco-5);
+  background: var(--papel-elevado);
+  border: 1.5px solid var(--borda);
+  border-radius: var(--raio-md);
+  box-shadow: var(--sombra-sm);
+  transition: transform var(--transicao-media), box-shadow var(--transicao-media);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sombra-md);
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calorias {
+  font-size: 13px;
+  color: var(--tinta-terciaria);
+}
+
+.nome {
+  font: var(--texto-display-sm);
+  color: var(--tinta-primaria);
+}
+
+.ingredientes {
+  font-size: 13px;
+  color: var(--tinta-terciaria);
+  line-height: 1.5;
+}
+
+.rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+  margin-top: auto;
+  padding-top: var(--espaco-2);
+  border-top: 1px solid var(--borda-suave);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-1);
+}
+
+.repete {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tinta-muted);
+}
+
+.acoes {
+  display: flex;
+  gap: var(--espaco-1);
+  flex-shrink: 0;
+}

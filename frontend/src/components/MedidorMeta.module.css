@@ -1,0 +1,28 @@
+.raiz {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.trilho {
+  height: 5px;
+  border-radius: var(--raio-pilula);
+  background: var(--papel-inset);
+  overflow: hidden;
+}
+
+.preenchimento {
+  height: 100%;
+  background: var(--lavanda-forte);
+  border-radius: var(--raio-pilula);
+  transition: width var(--transicao-media);
+}
+
+.preenchimento.estourou {
+  background: var(--vinho);
+}
+
+.legenda {
+  font-size: 10px;
+  color: var(--tinta-terciaria);
+}

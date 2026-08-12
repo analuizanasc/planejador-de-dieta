@@ -1,0 +1,22 @@
+.raiz {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-3);
+  text-align: center;
+  padding: var(--espaco-12) var(--espaco-6);
+  border: 1.5px dashed var(--borda-enfase);
+  border-radius: var(--raio-lg);
+  background: var(--papel-elevado);
+}
+
+.titulo {
+  font: var(--texto-display-sm);
+  color: var(--tinta-primaria);
+}
+
+.descricao {
+  font: var(--texto-pequeno);
+  color: var(--tinta-terciaria);
+  max-width: 40ch;
+}

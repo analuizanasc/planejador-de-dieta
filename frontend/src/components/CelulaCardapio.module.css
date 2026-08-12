@@ -1,0 +1,51 @@
+.celula {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espaco-1);
+  width: 100%;
+  min-height: 84px;
+  padding: var(--espaco-3);
+  background: var(--papel-elevado);
+  border: 1.5px solid var(--borda-suave);
+  border-radius: var(--raio-md);
+  text-align: left;
+  transition: border-color var(--transicao-rapida), box-shadow var(--transicao-rapida);
+}
+
+.celula:hover {
+  border-color: var(--borda-enfase);
+  box-shadow: var(--sombra-sm);
+}
+
+.nomeReceita {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tinta-primaria);
+  line-height: 1.35;
+}
+
+/* Assinatura: célula editada à mão (origem = 'manual' vindo do backend) */
+.editadaManualmente {
+  text-decoration: underline wavy var(--pinho);
+  text-decoration-thickness: 1.4px;
+  text-underline-offset: 3px;
+}
+
+.calorias {
+  font-size: 11px;
+  color: var(--tinta-terciaria);
+}
+
+.vazia {
+  border-style: dashed;
+  justify-content: center;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.textoVazio {
+  font-size: 11px;
+  color: var(--tinta-muted);
+  text-align: center;
+}

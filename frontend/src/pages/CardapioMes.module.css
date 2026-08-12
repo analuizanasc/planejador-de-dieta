@@ -1,0 +1,78 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-6);
+}
+
+.navegacao {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.mesAtual {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tinta-secundaria);
+  text-transform: capitalize;
+  min-width: 140px;
+  text-align: center;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-1);
+}
+
+.linha {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-4);
+  padding: var(--espaco-3) var(--espaco-4);
+  background: var(--papel-elevado);
+  border: 1.5px solid var(--borda-suave);
+  border-radius: var(--raio-md);
+}
+
+.data {
+  display: flex;
+  align-items: baseline;
+  gap: var(--espaco-2);
+  min-width: 88px;
+  flex-shrink: 0;
+}
+
+.diaNumero {
+  font: var(--texto-display-sm);
+  color: var(--tinta-primaria);
+}
+
+.diaSemana {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--tinta-terciaria);
+}
+
+.selos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.nomeReceita {
+  font-size: 13px;
+  color: var(--tinta-secundaria);
+}
+
+.semCardapio {
+  font-size: 13px;
+  color: var(--tinta-muted);
+  font-style: italic;
+}

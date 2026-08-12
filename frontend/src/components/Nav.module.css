@@ -1,0 +1,68 @@
+.barra {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-8);
+  margin: var(--espaco-4) auto 0;
+  padding: var(--espaco-3) var(--espaco-3) var(--espaco-3) var(--espaco-5);
+  max-width: 920px;
+  background: var(--papel-elevado);
+  border: 1.5px solid var(--borda);
+  border-radius: var(--raio-pilula);
+  box-shadow: var(--sombra-sm);
+}
+
+.marca {
+  font: var(--texto-display-sm);
+  font-family: var(--fonte-display);
+  font-style: italic;
+  color: var(--pinho);
+}
+
+.links {
+  display: flex;
+  gap: var(--espaco-1);
+  flex: 1;
+}
+
+.link {
+  padding: var(--espaco-2) var(--espaco-4);
+  border-radius: var(--raio-pilula);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--tinta-secundaria);
+  text-decoration: none;
+  transition: background var(--transicao-rapida), color var(--transicao-rapida);
+}
+
+.link:hover {
+  background: var(--papel-inset);
+  color: var(--tinta-primaria);
+}
+
+.ativo {
+  background: var(--pinho);
+  color: var(--tinta-sobre-escuro);
+}
+
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.nomeUsuario {
+  font-size: 13px;
+  color: var(--tinta-terciaria);
+}
+
+@media (max-width: 720px) {
+  .barra {
+    flex-wrap: wrap;
+    border-radius: var(--raio-lg);
+  }
+  .links {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+  }
+}

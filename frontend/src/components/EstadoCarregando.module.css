@@ -1,0 +1,24 @@
+.raiz {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding: var(--espaco-8);
+  color: var(--tinta-terciaria);
+  font-size: 14px;
+  justify-content: center;
+}
+
+.anel {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid var(--borda);
+  border-top-color: var(--lavanda-forte);
+  animation: girar 700ms linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}

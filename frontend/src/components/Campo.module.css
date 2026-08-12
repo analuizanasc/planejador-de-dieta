@@ -1,0 +1,40 @@
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+}
+
+.rotulo {
+  font: var(--texto-legenda);
+  color: var(--tinta-secundaria);
+}
+
+.input {
+  background: var(--papel-inset);
+  border: 1.5px solid var(--borda);
+  border-radius: var(--raio-sm);
+  padding: var(--espaco-3) var(--espaco-4);
+  font-size: 15px;
+  color: var(--tinta-primaria);
+  transition: border-color var(--transicao-rapida), background var(--transicao-rapida);
+}
+
+.input::placeholder {
+  color: var(--tinta-muted);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--anel-foco);
+  background: var(--papel-elevado);
+}
+
+.erro {
+  font: var(--texto-legenda);
+  color: var(--erro);
+}
+
+.dica {
+  font: var(--texto-legenda);
+  color: var(--tinta-terciaria);
+}

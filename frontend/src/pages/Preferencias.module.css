@@ -1,0 +1,86 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-6);
+  max-width: 640px;
+}
+
+.secao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  padding: var(--espaco-5);
+  background: var(--papel-elevado);
+  border: 1.5px solid var(--borda);
+  border-radius: var(--raio-lg);
+}
+
+.tituloSecao {
+  font: var(--texto-display-sm);
+  color: var(--tinta-primaria);
+}
+
+.descricao {
+  font-size: 13px;
+  color: var(--tinta-terciaria);
+  margin-top: calc(var(--espaco-1) * -1);
+}
+
+.pilulas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.pilula {
+  padding: var(--espaco-2) var(--espaco-4);
+  border-radius: var(--raio-pilula);
+  border: 1.5px solid var(--borda-enfase);
+  background: transparent;
+  color: var(--tinta-secundaria);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all var(--transicao-rapida);
+}
+
+.pilulaAtiva {
+  border-color: transparent;
+  color: var(--cor-pilula);
+  background: var(--fundo-pilula);
+}
+
+.pilulaRestricao {
+  border-color: transparent;
+  color: var(--vinho);
+  background: var(--vinho-fundo);
+}
+
+.metaLinha {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.metaInput {
+  width: 160px;
+  background: var(--papel-inset);
+  border: 1.5px solid var(--borda);
+  border-radius: var(--raio-sm);
+  padding: var(--espaco-3) var(--espaco-4);
+  font-family: var(--fonte-mono);
+  font-size: 15px;
+}
+
+.metaInput:focus {
+  outline: none;
+  border-color: var(--anel-foco);
+}
+
+.metaUnidade {
+  font-size: 13px;
+  color: var(--tinta-terciaria);
+}
+
+.botaoSalvar {
+  align-self: flex-start;
+}

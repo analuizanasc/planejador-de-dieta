@@ -1,0 +1,48 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-6);
+}
+
+.navegacao {
+  display: flex;
+  gap: var(--espaco-2);
+  flex-wrap: wrap;
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: 120px repeat(var(--colunas), minmax(130px, 1fr));
+  gap: var(--espaco-2);
+  overflow-x: auto;
+}
+
+.celulaCabecalho {
+  min-width: 0;
+}
+
+.cabecalhoDia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaco-2);
+  padding: var(--espaco-2);
+}
+
+.diaSemana {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tinta-terciaria);
+}
+
+.diaNumero {
+  font: var(--texto-display-sm);
+  color: var(--tinta-primaria);
+}
+
+.rotuloLinha {
+  display: flex;
+  align-items: center;
+  padding: var(--espaco-2) 0;
+}

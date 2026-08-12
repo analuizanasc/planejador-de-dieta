@@ -1,0 +1,36 @@
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  border-radius: var(--raio-pilula);
+  font-weight: 600;
+  color: var(--cor-selo);
+  background: var(--fundo-selo);
+  white-space: nowrap;
+}
+
+.icone {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
+.md {
+  padding: var(--espaco-1) var(--espaco-3);
+  font-size: 13px;
+}
+
+.md .icone {
+  width: 14px;
+  height: 14px;
+}
+
+.sm {
+  padding: 3px var(--espaco-2);
+  font-size: 11px;
+}
+
+.sm .icone {
+  width: 12px;
+  height: 12px;
+}

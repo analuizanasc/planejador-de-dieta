@@ -1,0 +1,25 @@
+.alerta {
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-sm);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1.5px solid transparent;
+}
+
+.erro {
+  background: var(--vinho-fundo);
+  color: var(--vinho);
+  border-color: color-mix(in srgb, var(--vinho) 25%, transparent);
+}
+
+.sucesso {
+  background: var(--erva-fundo);
+  color: var(--erva);
+  border-color: color-mix(in srgb, var(--erva) 25%, transparent);
+}
+
+.aviso {
+  background: var(--terracota-fundo);
+  color: var(--terracota);
+  border-color: color-mix(in srgb, var(--terracota) 25%, transparent);
+}

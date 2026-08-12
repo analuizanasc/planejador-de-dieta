@@ -1,0 +1,17 @@
+.raiz {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--espaco-4);
+  flex-wrap: wrap;
+}
+
+.titulo {
+  font: var(--texto-display-md);
+  color: var(--tinta-primaria);
+  margin-top: var(--espaco-1);
+}
+
+.titulo em {
+  color: var(--pinho);
+}
