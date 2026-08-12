@@ -7,5 +7,9 @@
     "start": "node src/server.js",
     "test": "echo \"testes serão configurados na etapa 4\" && exit 0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "express": "^5.2.1"
+  }
 }
