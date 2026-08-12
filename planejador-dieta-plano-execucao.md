@@ -29,9 +29,9 @@ Site de organização de dieta por mês/semana a partir de uma base de receitas,
 ## Estratégia de Testes
 
 - **Unitário (Jest):** cobertura de sentença e de decisão, com foco no algoritmo de geração de cardápio e nas funções de validação. Relatório de cobertura nativo do Jest configurado no CI.
-- **Integração (Supertest + Mocha):** heurística **VADER** completa — Verbs (verbos HTTP), Authorization, Data (payloads válidos/inválidos/vazios), Errors (códigos e mensagens), Responsiveness (tempo de resposta) — além da validação de todas as regras de negócio pela camada da API.
-- **Contrato (camada de API):** estrutura de resposta, tipos de dados e campos obrigatórios de cada endpoint, garantindo que o backend não quebra o frontend silenciosamente.
-- **E2E (Cypress):** fluxo completo do usuário, do cadastro de receitas à visualização mensal.
+- **Integração (Jest + Supertest):** heurística **VADER** completa — Verbs (verbos HTTP), Authorization, Data (payloads válidos/inválidos/vazios), Errors (códigos e mensagens), Responsiveness (tempo de resposta) — além da validação de todas as regras de negócio pela camada da API.
+- **Contrato (camada de API, Jest):** estrutura de resposta, tipos de dados e campos obrigatórios de cada endpoint, garantindo que o backend não quebra o frontend silenciosamente.
+- **E2E (Playwright):** cenários de maior risco e valor para o produto — geração automática respeitando restrições e meta calórica, não repetição em dias consecutivos e edição manual do cardápio — em vez do fluxo completo ponta a ponta.
 
 ## Avaliação da Estratégia (visão QA sênior)
 
@@ -124,13 +124,16 @@ validações de entrada e tratamento de erros em todos os endpoints.
 Com base na API e algoritmo já construídos, gere os testes completos.
 Unitários com Jest aplicando cobertura de sentença e decisão no
 algoritmo de geração e nas funções de validação, com relatório de
-cobertura configurado no CI. Integração com Supertest e Mocha usando
-a heurística VADER completa, cobrindo verbos HTTP, autorização,
-dados, erros e responsividade, mais validação de todas as regras de
-negócio. Testes de contrato na camada de API validando estrutura de
+cobertura configurado no CI. Integração com Jest e Supertest usando a
+heurística VADER completa, cobrindo verbos HTTP, autorização, dados,
+erros e responsividade, mais validação de todas as regras de negócio.
+Testes de contrato na camada de API com Jest validando estrutura de
 resposta, tipos de dados e campos obrigatórios por endpoint. E2E com
-Cypress cobrindo o fluxo completo do usuário desde cadastro de
-receitas até visualização mensal.
+Playwright, focado nos cenários de maior risco e maior valor para o
+produto (não no fluxo completo): geração automática de cardápio
+respeitando restrições alimentares e meta calórica, não repetição de
+receita em dias consecutivos, e edição manual de cardápio persistindo
+corretamente.
 ```
 
 ### Prompt 5 — Frontend (React)
