@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useReceitas } from '../hooks/useReceitas';
 import { CabecalhoPagina } from '../components/CabecalhoPagina';
 import { ReceitaCard } from '../components/ReceitaCard';
@@ -11,6 +12,7 @@ import styles from './Receitas.module.css';
 
 export function Receitas() {
   const { receitas, carregando, erro, criar, atualizar, excluir } = useReceitas();
+  const navigate = useNavigate();
   const [painelAberto, setPainelAberto] = useState(false);
   const [receitaEmEdicao, setReceitaEmEdicao] = useState(null);
 
@@ -53,7 +55,16 @@ export function Receitas() {
         eyebrow="A despensa de receitas"
         titulo="Suas"
         tituloEnfase="receitas."
-        acao={!painelAberto && <Botao onClick={abrirCriacao}>Nova receita</Botao>}
+        acao={
+          !painelAberto && (
+            <div className={styles.acoesCabecalho}>
+              <Botao variante="secundario" onClick={() => navigate('/receitas/importar')}>
+                Importar de vídeo
+              </Botao>
+              <Botao onClick={abrirCriacao}>Nova receita</Botao>
+            </div>
+          )
+        }
       />
 
       {painelAberto && (

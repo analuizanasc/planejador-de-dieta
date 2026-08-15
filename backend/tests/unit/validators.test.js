@@ -7,6 +7,7 @@ const {
   validarCategoria,
   validarArrayDeStrings,
   validarReceitaPayload,
+  validarReceitaComAvisos,
   validarPreferenciasPayload,
   validarRegistroPayload,
   validarLoginPayload,
@@ -283,5 +284,77 @@ describe('validarLoginPayload', () => {
 
   test('rejeita senha ausente', () => {
     expect(() => validarLoginPayload({ email: 'ana@teste.com' })).toThrow('senha é obrigatória');
+  });
+});
+
+describe('validarReceitaComAvisos', () => {
+  const RECEITA_OK = {
+    nome: 'Panqueca de banana',
+    categoria: 'cafe',
+    calorias: 250,
+    ingredientes: ['1 banana', '2 ovos'],
+    tags_restricao: ['gluten'],
+    permite_repeticao: true,
+  };
+
+  test('nunca lança, mesmo com entrada não-objeto', () => {
+    expect(() => validarReceitaComAvisos(null)).not.toThrow();
+    expect(() => validarReceitaComAvisos('nada')).not.toThrow();
+  });
+
+  test('rascunho totalmente válido não gera avisos', () => {
+    const { dados, avisos } = validarReceitaComAvisos(RECEITA_OK);
+    expect(avisos).toEqual([]);
+    expect(dados).toEqual(RECEITA_OK);
+  });
+
+  test('nome ausente vira string vazia com aviso', () => {
+    const { dados, avisos } = validarReceitaComAvisos({ ...RECEITA_OK, nome: '   ' });
+    expect(dados.nome).toBe('');
+    expect(avisos).toContain('Não identificamos o nome da receita; preencha antes de salvar.');
+  });
+
+  test('categoria inválida vira null com aviso', () => {
+    const { dados, avisos } = validarReceitaComAvisos({ ...RECEITA_OK, categoria: 'brunch' });
+    expect(dados.categoria).toBeNull();
+    expect(avisos).toContain('Categoria não reconhecida; selecione uma categoria válida.');
+  });
+
+  test('calorias inválidas viram null com aviso', () => {
+    const { dados, avisos } = validarReceitaComAvisos({ ...RECEITA_OK, calorias: -5 });
+    expect(dados.calorias).toBeNull();
+    expect(avisos).toContain('Não foi possível estimar as calorias; informe o valor manualmente.');
+  });
+
+  test('ingredientes ausentes/ inválidos viram lista filtrada com aviso quando vazia', () => {
+    const { dados, avisos } = validarReceitaComAvisos({ ...RECEITA_OK, ingredientes: [' ', 2, null] });
+    expect(dados.ingredientes).toEqual([]);
+    expect(avisos).toContain(
+      'Nenhum ingrediente foi identificado; adicione os ingredientes antes de salvar.'
+    );
+  });
+
+  test('ingredientes válidos são trimados e mantidos', () => {
+    const { dados } = validarReceitaComAvisos({ ...RECEITA_OK, ingredientes: ['  farinha  ', 'ovo'] });
+    expect(dados.ingredientes).toEqual(['farinha', 'ovo']);
+  });
+
+  test('tags inválidas são descartadas, mantendo as válidas, com aviso', () => {
+    const { dados, avisos } = validarReceitaComAvisos({
+      ...RECEITA_OK,
+      tags_restricao: ['gluten', 'xyz', 'gluten'],
+    });
+    expect(dados.tags_restricao).toEqual(['gluten']);
+    expect(avisos).toContain('Algumas tags de restrição não foram reconhecidas e foram descartadas.');
+  });
+
+  test('tags ausentes viram lista vazia sem aviso de tags', () => {
+    const { dados } = validarReceitaComAvisos({ ...RECEITA_OK, tags_restricao: undefined });
+    expect(dados.tags_restricao).toEqual([]);
+  });
+
+  test('permite_repeticao é coerido para boolean', () => {
+    const { dados } = validarReceitaComAvisos({ ...RECEITA_OK, permite_repeticao: undefined });
+    expect(dados.permite_repeticao).toBe(false);
   });
 });

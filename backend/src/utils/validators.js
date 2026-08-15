@@ -104,6 +104,60 @@ function validarReceitaPayload(body, { parcial = false } = {}) {
   return dados;
 }
 
+// Validação best-effort para o rascunho vindo da IA (importação do Instagram).
+// NUNCA lança: campos inválidos são coeridos para um valor seguro que o
+// formulário do frontend renderiza sem quebrar, e cada correção vira um aviso
+// para o usuário revisar antes de salvar. Distinta de validarReceitaPayload,
+// que é estrita e continua guardando o POST/PUT de /receitas.
+function validarReceitaComAvisos(bruto) {
+  const origem = bruto && typeof bruto === 'object' ? bruto : {};
+  const avisos = [];
+  const dados = {};
+
+  if (typeof origem.nome === 'string' && origem.nome.trim().length > 0) {
+    dados.nome = origem.nome.trim();
+  } else {
+    dados.nome = '';
+    avisos.push('Não identificamos o nome da receita; preencha antes de salvar.');
+  }
+
+  if (CATEGORIAS_VALIDAS.includes(origem.categoria)) {
+    dados.categoria = origem.categoria;
+  } else {
+    dados.categoria = null;
+    avisos.push('Categoria não reconhecida; selecione uma categoria válida.');
+  }
+
+  if (typeof origem.calorias === 'number' && Number.isFinite(origem.calorias) && origem.calorias >= 0) {
+    dados.calorias = origem.calorias;
+  } else {
+    dados.calorias = null;
+    avisos.push('Não foi possível estimar as calorias; informe o valor manualmente.');
+  }
+
+  const ingredientes = Array.isArray(origem.ingredientes)
+    ? origem.ingredientes.filter((i) => typeof i === 'string' && i.trim().length > 0).map((i) => i.trim())
+    : [];
+  dados.ingredientes = ingredientes;
+  if (ingredientes.length === 0) {
+    avisos.push('Nenhum ingrediente foi identificado; adicione os ingredientes antes de salvar.');
+  }
+
+  if (Array.isArray(origem.tags_restricao)) {
+    const validas = origem.tags_restricao.filter((t) => RESTRICOES_VALIDAS.includes(t));
+    dados.tags_restricao = [...new Set(validas)];
+    if (validas.length !== origem.tags_restricao.length) {
+      avisos.push('Algumas tags de restrição não foram reconhecidas e foram descartadas.');
+    }
+  } else {
+    dados.tags_restricao = [];
+  }
+
+  dados.permite_repeticao = Boolean(origem.permite_repeticao);
+
+  return { dados, avisos };
+}
+
 function validarPreferenciasPayload(body) {
   if (!body || typeof body !== 'object') {
     throw new AppError(400, 'Corpo da requisição inválido');
@@ -194,6 +248,7 @@ module.exports = {
   validarCategoria,
   validarArrayDeStrings,
   validarReceitaPayload,
+  validarReceitaComAvisos,
   validarPreferenciasPayload,
   validarRegistroPayload,
   validarLoginPayload,

@@ -4,6 +4,12 @@
   gap: var(--espaco-6);
 }
 
+.acoesCabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+}
+
 .grade {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

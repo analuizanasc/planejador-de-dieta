@@ -5,6 +5,7 @@ import { AppLayout } from './routes/AppLayout';
 import { Login } from './pages/Login';
 import { Registro } from './pages/Registro';
 import { Receitas } from './pages/Receitas';
+import { ImportarReceita } from './pages/ImportarReceita';
 import { Preferencias } from './pages/Preferencias';
 import { CardapioSemana } from './pages/CardapioSemana';
 import { CardapioMes } from './pages/CardapioMes';
@@ -20,6 +21,7 @@ export function App() {
           <Route element={<RequireAuth />}>
             <Route element={<AppLayout />}>
               <Route path="/receitas" element={<Receitas />} />
+              <Route path="/receitas/importar" element={<ImportarReceita />} />
               <Route path="/preferencias" element={<Preferencias />} />
               <Route path="/cardapio/semana" element={<CardapioSemana />} />
               <Route path="/cardapio/mes" element={<CardapioMes />} />

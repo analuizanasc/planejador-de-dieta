@@ -5,16 +5,23 @@ const errorHandler = require('./middlewares/errorHandler');
 const autenticar = require('./middlewares/auth');
 const criarRotasAuth = require('./routes/auth');
 const criarRotasReceitas = require('./routes/receitas');
+const criarRotasImportacaoReceitas = require('./routes/receitasImportacao');
 const criarRotasPreferencias = require('./routes/preferencias');
 const criarRotasCardapio = require('./routes/cardapio');
 
-function criarApp(db) {
+function criarApp(db, opcoes = {}) {
   const app = express();
   app.use(express.json());
 
   app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
   app.use('/auth', criarRotasAuth(db));
+  // Rota mais específica antes de /receitas para não colidir com /receitas/:id.
+  app.use(
+    '/receitas/importar-instagram',
+    autenticar,
+    criarRotasImportacaoReceitas(db, opcoes.importadorDeps)
+  );
   app.use('/receitas', autenticar, criarRotasReceitas(db));
   app.use('/preferencias', autenticar, criarRotasPreferencias(db));
   app.use('/cardapio', autenticar, criarRotasCardapio(db));

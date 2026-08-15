@@ -10,6 +10,13 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+if (!process.env.GEMINI_API_KEY) {
+  console.warn(
+    'GEMINI_API_KEY não definido: a importação de receitas do Instagram ficará indisponível ' +
+      '(as demais rotas funcionam normalmente).'
+  );
+}
+
 const PORTA = process.env.PORT || 3000;
 
 const db = criarConexao();
