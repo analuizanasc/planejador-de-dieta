@@ -15,12 +15,13 @@ const SCHEMA_RECEITA = {
   type: 'object',
   properties: {
     nome: { type: 'string' },
-    categoria: { type: 'string' },
+    categorias: { type: 'array', items: { type: 'string' } },
     calorias: { type: 'number' },
     ingredientes: { type: 'array', items: { type: 'string' } },
+    modo_preparo: { type: 'string' },
     tags_restricao: { type: 'array', items: { type: 'string' } },
   },
-  required: ['nome', 'categoria', 'ingredientes'],
+  required: ['nome', 'categorias', 'ingredientes'],
 };
 
 function montarPrompt(legenda) {
@@ -29,10 +30,11 @@ function montarPrompt(legenda) {
     'Analise o conteúdo abaixo (o texto fornecido e, se houver, o vídeo anexado — incluindo a fala e o texto que aparece na tela) e devolva UMA receita estruturada em JSON.',
     '',
     'Regras:',
-    `- "categoria" deve ser exatamente um destes valores: ${CATEGORIAS_VALIDAS.join(', ')}. Escolha a mais adequada ao prato.`,
+    `- "categorias" é uma lista com um ou mais destes valores: ${CATEGORIAS_VALIDAS.join(', ')}. Inclua todas as refeições em que o prato se encaixa (ex.: um cuscuz pode ser café e lanche).`,
     `- "tags_restricao" só pode conter valores desta lista (inclua apenas os que a receita CONTÉM): ${RESTRICOES_VALIDAS.join(', ')}. Se a receita não contém nenhum, devolva uma lista vazia.`,
     '- "calorias" é uma estimativa numérica por porção. Se não der para estimar com segurança, use 0.',
     '- "ingredientes" é uma lista de strings, um ingrediente por item, com quantidades quando disponíveis.',
+    '- "modo_preparo" é o passo a passo do preparo, com os passos numerados em ordem, separados por quebra de linha. Se o conteúdo não descrever o preparo, devolva uma string vazia.',
     '- Escreva em português do Brasil. Não invente ingredientes que não aparecem no conteúdo.',
     '',
     'Texto fornecido (legenda/descrição/comentários):',

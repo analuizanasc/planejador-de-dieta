@@ -6,6 +6,7 @@ const { emailUnico, criarUsuarioAutenticado } = require('../integration/helpers/
 const { umaReceita } = require('../integration/helpers/receitaBuilder');
 const {
   assertReceitaShape,
+  assertCadernoShape,
   assertPreferenciasShape,
   assertCardapioEntradaShape,
   assertUsuarioPublicoShape,
@@ -59,6 +60,23 @@ describe('Contrato — /receitas', () => {
     const resposta = await request(app).get('/receitas').set('Authorization', `Bearer ${token}`);
     expect(Array.isArray(resposta.body)).toBe(true);
     resposta.body.forEach(assertReceitaShape);
+  });
+});
+
+describe('Contrato — /cadernos', () => {
+  test('POST e GET retornam cadernos com exatamente id/nome e tipos corretos', async () => {
+    const { app } = criarAppDeTeste();
+    const { token } = await criarUsuarioAutenticado(app);
+
+    const criado = await request(app)
+      .post('/cadernos')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Doces' });
+    assertCadernoShape(criado.body);
+
+    const lista = await request(app).get('/cadernos').set('Authorization', `Bearer ${token}`);
+    expect(Array.isArray(lista.body)).toBe(true);
+    lista.body.forEach(assertCadernoShape);
   });
 });
 

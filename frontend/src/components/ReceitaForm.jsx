@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CATEGORIA_META, CATEGORIAS_ORDEM, RESTRICAO_META } from '../styles/categorias';
 import { Campo, Input } from './Campo';
 import { Select } from './Select';
@@ -6,28 +6,46 @@ import { Botao } from './Botao';
 import { Alerta } from './Alerta';
 import styles from './ReceitaForm.module.css';
 
-const OPCOES_CATEGORIA = CATEGORIAS_ORDEM.map((c) => ({ valor: c, rotulo: CATEGORIA_META[c].rotulo }));
+const TAMANHO_MAXIMO_IMAGEM = 2 * 1024 * 1024; // 2 MB
 
-function paraTexto(ingredientes) {
-  return (ingredientes || []).join('\n');
+// Sempre pelo menos uma linha de ingrediente em branco para o usuário digitar.
+function ingredientesIniciais(ingredientes) {
+  return ingredientes && ingredientes.length > 0 ? [...ingredientes] : [''];
 }
 
-function paraLista(texto) {
-  return texto
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
+// Aceita o formato novo (categorias: []) e o legado (categoria: string).
+function categoriasIniciais(receita) {
+  if (Array.isArray(receita?.categorias)) return receita.categorias;
+  return receita?.categoria ? [receita.categoria] : [];
 }
 
-export function ReceitaForm({ receitaInicial, aoSalvar, aoCancelar }) {
+export function ReceitaForm({ receitaInicial, cadernos = [], aoSalvar, aoCancelar }) {
   const [nome, setNome] = useState(receitaInicial?.nome || '');
-  const [categoria, setCategoria] = useState(receitaInicial?.categoria || 'cafe');
+  const [categorias, setCategorias] = useState(categoriasIniciais(receitaInicial));
   const [calorias, setCalorias] = useState(receitaInicial?.calorias ?? '');
-  const [ingredientesTexto, setIngredientesTexto] = useState(paraTexto(receitaInicial?.ingredientes));
+  const [ingredientes, setIngredientes] = useState(ingredientesIniciais(receitaInicial?.ingredientes));
+  const [modoPreparo, setModoPreparo] = useState(receitaInicial?.modo_preparo || '');
+  const [imagemUrl, setImagemUrl] = useState(receitaInicial?.imagem_url || null);
+  const [cadernoId, setCadernoId] = useState(receitaInicial?.caderno_id ?? '');
   const [tagsRestricao, setTagsRestricao] = useState(receitaInicial?.tags_restricao || []);
   const [permiteRepeticao, setPermiteRepeticao] = useState(receitaInicial?.permite_repeticao || false);
   const [erro, setErro] = useState(null);
   const [salvando, setSalvando] = useState(false);
+
+  const inputsIngrediente = useRef([]);
+  const arquivoRef = useRef(null);
+  const [focoIngrediente, setFocoIngrediente] = useState(null);
+
+  useEffect(() => {
+    if (focoIngrediente === null) return;
+    inputsIngrediente.current[focoIngrediente]?.focus();
+    setFocoIngrediente(null);
+  }, [focoIngrediente]);
+
+  const opcoesCaderno = [
+    { valor: '', rotulo: 'Sem caderno' },
+    ...cadernos.map((c) => ({ valor: c.id, rotulo: c.nome })),
+  ];
 
   function alternarRestricao(codigo) {
     setTagsRestricao((atual) =>
@@ -35,21 +53,66 @@ export function ReceitaForm({ receitaInicial, aoSalvar, aoCancelar }) {
     );
   }
 
+  function alternarCategoria(codigo) {
+    setCategorias((atual) =>
+      atual.includes(codigo) ? atual.filter((c) => c !== codigo) : [...atual, codigo]
+    );
+  }
+
+  function mudarIngrediente(indice, valor) {
+    setIngredientes((atual) => atual.map((ing, i) => (i === indice ? valor : ing)));
+  }
+
+  // Enter cria um novo campo logo abaixo e move o foco para ele.
+  function aoTeclarIngrediente(evento, indice) {
+    if (evento.key !== 'Enter') return;
+    evento.preventDefault();
+    setIngredientes((atual) => {
+      const proximo = [...atual];
+      proximo.splice(indice + 1, 0, '');
+      return proximo;
+    });
+    setFocoIngrediente(indice + 1);
+  }
+
+  function removerIngrediente(indice) {
+    setIngredientes((atual) => (atual.length === 1 ? [''] : atual.filter((_, i) => i !== indice)));
+  }
+
+  function aoSelecionarImagem(evento) {
+    const arquivo = evento.target.files?.[0];
+    if (!arquivo) return;
+    if (arquivo.size > TAMANHO_MAXIMO_IMAGEM) {
+      setErro('A imagem é muito grande (máximo 2 MB).');
+      return;
+    }
+    const leitor = new FileReader();
+    leitor.onload = () => setImagemUrl(leitor.result);
+    leitor.readAsDataURL(arquivo);
+  }
+
   async function aoSubmeter(evento) {
     evento.preventDefault();
     setErro(null);
-    const ingredientes = paraLista(ingredientesTexto);
-    if (ingredientes.length === 0) {
-      setErro('Informe ao menos um ingrediente (um por linha).');
+    const ingredientesLimpos = ingredientes.map((i) => i.trim()).filter(Boolean);
+    if (categorias.length === 0) {
+      setErro('Selecione ao menos uma categoria.');
+      return;
+    }
+    if (ingredientesLimpos.length === 0) {
+      setErro('Informe ao menos um ingrediente.');
       return;
     }
     setSalvando(true);
     try {
       await aoSalvar({
         nome: nome.trim(),
-        categoria,
-        calorias: Number(calorias),
-        ingredientes,
+        categorias,
+        calorias: calorias === '' ? null : Number(calorias),
+        ingredientes: ingredientesLimpos,
+        modo_preparo: modoPreparo.trim() || null,
+        imagem_url: imagemUrl || null,
+        caderno_id: cadernoId === '' ? null : Number(cadernoId),
         tags_restricao: tagsRestricao,
         permite_repeticao: permiteRepeticao,
       });
@@ -64,35 +127,103 @@ export function ReceitaForm({ receitaInicial, aoSalvar, aoCancelar }) {
     <form className={styles.form} onSubmit={aoSubmeter}>
       {erro && <Alerta tipo="erro">{erro}</Alerta>}
 
+      <Campo rotulo="Nome" id="receita-nome">
+        <Input id="receita-nome" required value={nome} onChange={(e) => setNome(e.target.value)} />
+      </Campo>
+
+      <div>
+        <span className={styles.rotuloGrupo}>Categorias (uma ou mais)</span>
+        <div className={styles.checkboxes}>
+          {CATEGORIAS_ORDEM.map((codigo) => (
+            <label key={codigo} className={styles.checkbox}>
+              <input
+                type="checkbox"
+                checked={categorias.includes(codigo)}
+                onChange={() => alternarCategoria(codigo)}
+                aria-label={CATEGORIA_META[codigo].rotulo}
+              />
+              {CATEGORIA_META[codigo].rotulo}
+            </label>
+          ))}
+        </div>
+      </div>
+
       <div className={styles.linha}>
-        <Campo rotulo="Nome" id="receita-nome">
-          <Input id="receita-nome" required value={nome} onChange={(e) => setNome(e.target.value)} />
+        <Campo rotulo="Calorias (opcional)" id="receita-calorias">
+          <Input
+            id="receita-calorias"
+            type="number"
+            min="0"
+            placeholder="Deixe em branco se não souber"
+            value={calorias}
+            onChange={(e) => setCalorias(e.target.value)}
+          />
         </Campo>
-        <Campo rotulo="Categoria" id="receita-categoria">
-          <Select valor={categoria} aoMudar={setCategoria} opcoes={OPCOES_CATEGORIA} />
+        <Campo rotulo="Caderno" id="receita-caderno">
+          <Select valor={cadernoId} aoMudar={setCadernoId} opcoes={opcoesCaderno} />
         </Campo>
       </div>
 
-      <Campo rotulo="Calorias" id="receita-calorias">
-        <Input
-          id="receita-calorias"
-          type="number"
-          min="0"
-          required
-          value={calorias}
-          onChange={(e) => setCalorias(e.target.value)}
+      <div>
+        <span className={styles.rotuloGrupo}>Ingredientes (Enter adiciona outro)</span>
+        <div className={styles.ingredientes}>
+          {ingredientes.map((ingrediente, indice) => (
+            <div key={indice} className={styles.linhaIngrediente}>
+              <Input
+                ref={(el) => (inputsIngrediente.current[indice] = el)}
+                value={ingrediente}
+                placeholder={`Ingrediente ${indice + 1}`}
+                onChange={(e) => mudarIngrediente(indice, e.target.value)}
+                onKeyDown={(e) => aoTeclarIngrediente(e, indice)}
+                aria-label={`Ingrediente ${indice + 1}`}
+              />
+              <Botao
+                type="button"
+                variante="fantasma"
+                tamanho="sm"
+                onClick={() => removerIngrediente(indice)}
+                aria-label={`Remover ingrediente ${indice + 1}`}
+              >
+                ×
+              </Botao>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Campo rotulo="Modo de preparo (opcional)" id="receita-modo-preparo">
+        <textarea
+          id="receita-modo-preparo"
+          className={styles.textarea}
+          rows={5}
+          placeholder="Passo a passo do preparo, um passo por linha."
+          value={modoPreparo}
+          onChange={(e) => setModoPreparo(e.target.value)}
         />
       </Campo>
 
-      <Campo rotulo="Ingredientes (um por linha)" id="receita-ingredientes">
-        <textarea
-          id="receita-ingredientes"
-          className={styles.textarea}
-          rows={4}
-          value={ingredientesTexto}
-          onChange={(e) => setIngredientesTexto(e.target.value)}
+      <div>
+        <span className={styles.rotuloGrupo}>Imagem (opcional)</span>
+        {imagemUrl && (
+          <div className={styles.imagemPreview}>
+            <img src={imagemUrl} alt="Prévia da receita" />
+            <Botao type="button" variante="fantasma" tamanho="sm" onClick={() => setImagemUrl(null)}>
+              Remover imagem
+            </Botao>
+          </div>
+        )}
+        {/* Input nativo escondido: o botão do app o dispara, mantendo o padrão visual. */}
+        <input
+          ref={arquivoRef}
+          type="file"
+          accept="image/*"
+          onChange={aoSelecionarImagem}
+          className={styles.inputArquivoOculto}
         />
-      </Campo>
+        <Botao type="button" variante="secundario" tamanho="sm" onClick={() => arquivoRef.current?.click()}>
+          {imagemUrl ? 'Trocar imagem' : 'Escolher arquivo'}
+        </Botao>
+      </div>
 
       <div>
         <span className={styles.rotuloGrupo}>Contém</span>

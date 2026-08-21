@@ -9,16 +9,39 @@ function assertShapeExata(obj, chavesEsperadas) {
 }
 
 function assertReceitaShape(receita) {
-  assertShapeExata(receita, ['id', 'nome', 'categoria', 'calorias', 'ingredientes', 'tags_restricao', 'permite_repeticao']);
+  assertShapeExata(receita, [
+    'id',
+    'caderno_id',
+    'nome',
+    'categorias',
+    'calorias',
+    'modo_preparo',
+    'imagem_url',
+    'ingredientes',
+    'tags_restricao',
+    'permite_repeticao',
+  ]);
   expect(typeof receita.id).toBe('number');
+  expect(receita.caderno_id === null || typeof receita.caderno_id === 'number').toBe(true);
   expect(typeof receita.nome).toBe('string');
-  expect(typeof receita.categoria).toBe('string');
-  expect(typeof receita.calorias).toBe('number');
+  expect(Array.isArray(receita.categorias)).toBe(true);
+  expect(receita.categorias.length).toBeGreaterThan(0);
+  receita.categorias.forEach((c) => expect(typeof c).toBe('string'));
+  // calorias é opcional: número >= 0 ou null quando não informado.
+  expect(receita.calorias === null || typeof receita.calorias === 'number').toBe(true);
+  expect(receita.modo_preparo === null || typeof receita.modo_preparo === 'string').toBe(true);
+  expect(receita.imagem_url === null || typeof receita.imagem_url === 'string').toBe(true);
   expect(Array.isArray(receita.ingredientes)).toBe(true);
   receita.ingredientes.forEach((i) => expect(typeof i).toBe('string'));
   expect(Array.isArray(receita.tags_restricao)).toBe(true);
   receita.tags_restricao.forEach((t) => expect(typeof t).toBe('string'));
   expect(typeof receita.permite_repeticao).toBe('boolean');
+}
+
+function assertCadernoShape(caderno) {
+  assertShapeExata(caderno, ['id', 'nome']);
+  expect(typeof caderno.id).toBe('number');
+  expect(typeof caderno.nome).toBe('string');
 }
 
 function assertPreferenciasShape(preferencias) {
@@ -53,6 +76,7 @@ function assertErroShape(corpo) {
 module.exports = {
   assertShapeExata,
   assertReceitaShape,
+  assertCadernoShape,
   assertPreferenciasShape,
   assertCardapioEntradaShape,
   assertUsuarioPublicoShape,

@@ -10,8 +10,51 @@
   gap: var(--espaco-3);
 }
 
+.cadernos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.chip,
+.chipNovo,
+.chipExcluir {
+  padding: var(--espaco-2) var(--espaco-4);
+  border: 1.5px solid var(--borda);
+  border-radius: var(--raio-pilula);
+  background: var(--papel-elevado);
+  color: var(--tinta-secundaria);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.chip:hover,
+.chipNovo:hover {
+  border-color: var(--anel-foco);
+}
+
+.chipAtivo {
+  background: var(--terracota-fundo);
+  color: var(--terracota);
+  border-color: var(--terracota);
+}
+
+.chipNovo {
+  border-style: dashed;
+}
+
+.chipExcluir {
+  margin-left: auto;
+  color: var(--erro);
+  border-color: currentColor;
+  background: transparent;
+}
+
 .grade {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--espaco-4);
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+  /* Impede que um card estique os vizinhos da mesma fileira (spec §2.6). */
+  align-items: start;
 }

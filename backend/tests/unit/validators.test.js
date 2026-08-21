@@ -9,6 +9,7 @@ const {
   validarReceitaPayload,
   validarReceitaComAvisos,
   validarPreferenciasPayload,
+  validarCadernoPayload,
   validarRegistroPayload,
   validarLoginPayload,
 } = require('../../src/utils/validators');
@@ -94,8 +95,11 @@ describe('validarArrayDeStrings', () => {
 describe('validarReceitaPayload (payload completo, parcial=false)', () => {
   const payloadValido = {
     nome: 'Tapioca',
-    categoria: 'cafe',
+    categorias: ['cafe'],
     calorias: 300,
+    modo_preparo: null,
+    imagem_url: null,
+    caderno_id: null,
     ingredientes: ['tapioca', 'ovo'],
     tags_restricao: ['lactose'],
     permite_repeticao: true,
@@ -118,13 +122,30 @@ describe('validarReceitaPayload (payload completo, parcial=false)', () => {
     expect(() => validarReceitaPayload({ ...payloadValido, nome: '   ' })).toThrow('nome é obrigatório');
   });
 
-  test('rejeita quando categoria está ausente ou inválida', () => {
-    expect(() => validarReceitaPayload({ ...payloadValido, categoria: undefined })).toThrow(AppError);
+  test('rejeita quando categorias está ausente', () => {
+    const { categorias, ...semCategorias } = payloadValido;
+    expect(() => validarReceitaPayload(semCategorias)).toThrow(AppError);
+  });
+
+  test('rejeita categorias vazio', () => {
+    expect(() => validarReceitaPayload({ ...payloadValido, categorias: [] })).toThrow(
+      'categorias deve conter ao menos 1 item'
+    );
+  });
+
+  test('rejeita categorias com valor fora do enum', () => {
+    expect(() => validarReceitaPayload({ ...payloadValido, categorias: ['brunch'] })).toThrow(AppError);
+  });
+
+  test('aceita múltiplas categorias e deduplica', () => {
+    expect(
+      validarReceitaPayload({ ...payloadValido, categorias: ['cafe', 'lanche', 'cafe'] }).categorias
+    ).toEqual(['cafe', 'lanche']);
   });
 
   test('rejeita calorias negativa (fronteira: -1 inválido)', () => {
     expect(() => validarReceitaPayload({ ...payloadValido, calorias: -1 })).toThrow(
-      'calorias é obrigatório'
+      'calorias deve ser um número >= 0 ou null'
     );
   });
 
@@ -132,8 +153,47 @@ describe('validarReceitaPayload (payload completo, parcial=false)', () => {
     expect(validarReceitaPayload({ ...payloadValido, calorias: 0 }).calorias).toBe(0);
   });
 
+  test('aceita calorias null (campo opcional)', () => {
+    expect(validarReceitaPayload({ ...payloadValido, calorias: null }).calorias).toBeNull();
+  });
+
+  test('aceita calorias ausente, tratada como null (campo opcional)', () => {
+    const { calorias, ...semCalorias } = payloadValido;
+    expect(validarReceitaPayload(semCalorias).calorias).toBeNull();
+  });
+
   test('rejeita calorias não numérica', () => {
     expect(() => validarReceitaPayload({ ...payloadValido, calorias: '300' })).toThrow(AppError);
+  });
+
+  test('modo_preparo é aparado; string vazia vira null', () => {
+    expect(validarReceitaPayload({ ...payloadValido, modo_preparo: '  Misture tudo  ' }).modo_preparo).toBe(
+      'Misture tudo'
+    );
+    expect(validarReceitaPayload({ ...payloadValido, modo_preparo: '   ' }).modo_preparo).toBeNull();
+  });
+
+  test('rejeita modo_preparo que não é string', () => {
+    expect(() => validarReceitaPayload({ ...payloadValido, modo_preparo: 42 })).toThrow(
+      'modo_preparo deve ser uma string'
+    );
+  });
+
+  test('imagem_url é aparada e mantida quando presente', () => {
+    expect(
+      validarReceitaPayload({ ...payloadValido, imagem_url: ' https://x/i.jpg ' }).imagem_url
+    ).toBe('https://x/i.jpg');
+  });
+
+  test('aceita caderno_id inteiro positivo', () => {
+    expect(validarReceitaPayload({ ...payloadValido, caderno_id: 7 }).caderno_id).toBe(7);
+  });
+
+  test('rejeita caderno_id não inteiro positivo', () => {
+    expect(() => validarReceitaPayload({ ...payloadValido, caderno_id: 0 })).toThrow(
+      'caderno_id deve ser um inteiro positivo ou null'
+    );
+    expect(() => validarReceitaPayload({ ...payloadValido, caderno_id: 1.5 })).toThrow(AppError);
   });
 
   test('rejeita ingredientes ausente', () => {
@@ -290,8 +350,10 @@ describe('validarLoginPayload', () => {
 describe('validarReceitaComAvisos', () => {
   const RECEITA_OK = {
     nome: 'Panqueca de banana',
-    categoria: 'cafe',
+    categorias: ['cafe'],
     calorias: 250,
+    modo_preparo: null,
+    imagem_url: null,
     ingredientes: ['1 banana', '2 ovos'],
     tags_restricao: ['gluten'],
     permite_repeticao: true,
@@ -314,10 +376,21 @@ describe('validarReceitaComAvisos', () => {
     expect(avisos).toContain('Não identificamos o nome da receita; preencha antes de salvar.');
   });
 
-  test('categoria inválida vira null com aviso', () => {
-    const { dados, avisos } = validarReceitaComAvisos({ ...RECEITA_OK, categoria: 'brunch' });
-    expect(dados.categoria).toBeNull();
-    expect(avisos).toContain('Categoria não reconhecida; selecione uma categoria válida.');
+  test('categorias inválidas viram lista vazia com aviso', () => {
+    const { dados, avisos } = validarReceitaComAvisos({ ...RECEITA_OK, categorias: ['brunch'] });
+    expect(dados.categorias).toEqual([]);
+    expect(avisos).toContain('Categoria não reconhecida; selecione ao menos uma categoria válida.');
+  });
+
+  test('aceita categoria única legada (string) do rascunho da IA', () => {
+    const { categorias, ...semArray } = RECEITA_OK;
+    const { dados } = validarReceitaComAvisos({ ...semArray, categoria: 'almoco' });
+    expect(dados.categorias).toEqual(['almoco']);
+  });
+
+  test('deduplica categorias válidas do rascunho', () => {
+    const { dados } = validarReceitaComAvisos({ ...RECEITA_OK, categorias: ['cafe', 'lanche', 'cafe'] });
+    expect(dados.categorias).toEqual(['cafe', 'lanche']);
   });
 
   test('calorias inválidas viram null com aviso', () => {
@@ -339,6 +412,16 @@ describe('validarReceitaComAvisos', () => {
     expect(dados.ingredientes).toEqual(['farinha', 'ovo']);
   });
 
+  test('modo_preparo e imagem_url do rascunho da IA são aparados e mantidos', () => {
+    const { dados } = validarReceitaComAvisos({
+      ...RECEITA_OK,
+      modo_preparo: '  1. Bata tudo\n2. Frite  ',
+      imagem_url: '  https://x/i.jpg  ',
+    });
+    expect(dados.modo_preparo).toBe('1. Bata tudo\n2. Frite');
+    expect(dados.imagem_url).toBe('https://x/i.jpg');
+  });
+
   test('tags inválidas são descartadas, mantendo as válidas, com aviso', () => {
     const { dados, avisos } = validarReceitaComAvisos({
       ...RECEITA_OK,
@@ -356,5 +439,23 @@ describe('validarReceitaComAvisos', () => {
   test('permite_repeticao é coerido para boolean', () => {
     const { dados } = validarReceitaComAvisos({ ...RECEITA_OK, permite_repeticao: undefined });
     expect(dados.permite_repeticao).toBe(false);
+  });
+});
+
+describe('validarCadernoPayload', () => {
+  test('aceita nome válido e o apara', () => {
+    expect(validarCadernoPayload({ nome: '  Doces  ' })).toEqual({ nome: 'Doces' });
+  });
+
+  test('rejeita corpo nulo', () => {
+    expect(() => validarCadernoPayload(null)).toThrow(AppError);
+  });
+
+  test('rejeita nome ausente', () => {
+    expect(() => validarCadernoPayload({})).toThrow('nome é obrigatório');
+  });
+
+  test('rejeita nome vazio após trim', () => {
+    expect(() => validarCadernoPayload({ nome: '   ' })).toThrow('nome é obrigatório');
   });
 });

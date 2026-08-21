@@ -7,17 +7,21 @@ const {
   selecionarSemMeta,
   selecionarComMeta,
   resolverCategoriasAtivas,
+  embaralharAleatorio,
 } = require('../../src/services/geradorCardapio');
 
-function receita(overrides) {
+function receita(overrides = {}) {
+  // Aceita `categoria` (atalho de 1 categoria) ou `categorias` (lista) nos
+  // overrides e sempre expõe `categorias` (o formato que o gerador usa).
+  const { categoria, categorias, ...resto } = overrides;
   return {
     id: 1,
     nome: 'Receita',
-    categoria: 'cafe',
+    categorias: categorias || [categoria || 'cafe'],
     calorias: 300,
     tags_restricao: [],
     permite_repeticao: false,
-    ...overrides,
+    ...resto,
   };
 }
 
@@ -75,6 +79,13 @@ describe('filtrarCandidatas', () => {
     const candidatas = filtrarCandidatas(receitas, 'cafe', [], 4);
     expect(candidatas.map((r) => r.id)).toContain(4);
   });
+
+  test('receita com múltiplas categorias é candidata em qualquer uma delas', () => {
+    const multi = [receita({ id: 9, categorias: ['cafe', 'lanche'] })];
+    expect(filtrarCandidatas(multi, 'cafe', [], null).map((r) => r.id)).toEqual([9]);
+    expect(filtrarCandidatas(multi, 'lanche', [], null).map((r) => r.id)).toEqual([9]);
+    expect(filtrarCandidatas(multi, 'almoco', [], null)).toEqual([]);
+  });
 });
 
 describe('selecionarSemMeta (variedade/LRU)', () => {
@@ -98,6 +109,23 @@ describe('selecionarSemMeta (variedade/LRU)', () => {
   test('em empate total, desempata pelo menor id (determinismo)', () => {
     const candidatas = [receita({ id: 5 }), receita({ id: 2 }), receita({ id: 9 })];
     expect(selecionarSemMeta(candidatas, new Map(), new Map()).id).toBe(2);
+  });
+
+  test('entre empatadas no topo, o embaralhador injetado decide qual sai (variedade)', () => {
+    const candidatas = [receita({ id: 5 }), receita({ id: 2 }), receita({ id: 9 })];
+    // Todas empatam (nunca usadas); um embaralhador que inverte a ordem faz a
+    // seleção cair na última em vez do menor id — prova que o hook de variedade
+    // atua exatamente sobre o grupo empatado no topo.
+    const inverter = (arr) => [...arr].reverse();
+    expect(selecionarSemMeta(candidatas, new Map(), new Map(), inverter).id).toBe(9);
+  });
+
+  test('o embaralhador só reordena empatadas: a prioridade LRU continua respeitada', () => {
+    const candidatas = [receita({ id: 1 }), receita({ id: 2 })];
+    const ultimoUso = new Map([[1, 0]]); // id 1 usada recentemente; id 2 nunca
+    // Mesmo invertendo, id 2 (nunca usada) tem prioridade — não empata com id 1.
+    const inverter = (arr) => [...arr].reverse();
+    expect(selecionarSemMeta(candidatas, ultimoUso, new Map(), inverter).id).toBe(2);
   });
 });
 
@@ -159,6 +187,24 @@ describe('selecionarComMeta (RN4)', () => {
     ];
     const escolhidas = selecionarComMeta(slots, 300);
     expect(escolhidas[0].id).toBe(1);
+  });
+});
+
+describe('embaralharAleatorio (variedade na regeneração)', () => {
+  test('devolve uma permutação determinística para um RNG injetado, sem mutar a entrada', () => {
+    const entrada = [receita({ id: 1 }), receita({ id: 2 }), receita({ id: 3 })];
+    const resultado = embaralharAleatorio(entrada, () => 0);
+    expect(resultado.map((r) => r.id)).toEqual([2, 3, 1]);
+    // A entrada original permanece intacta (função pura, sem efeito colateral).
+    expect(entrada.map((r) => r.id)).toEqual([1, 2, 3]);
+  });
+
+  test('preserva todos os itens (é permutação, não perde nem duplica candidatas)', () => {
+    const entrada = [receita({ id: 7 }), receita({ id: 4 }), receita({ id: 9 }), receita({ id: 1 })];
+    const ids = embaralharAleatorio(entrada, Math.random)
+      .map((r) => r.id)
+      .sort((a, b) => a - b);
+    expect(ids).toEqual([1, 4, 7, 9]);
   });
 });
 
@@ -262,5 +308,18 @@ describe('gerarCardapio — integração das regras de negócio (RN1–RN5)', ()
   test('funciona com "preferencias" omitida, usando os padrões (RN2)', () => {
     const { cardapio } = gerarCardapio({ receitas, dias: ['2026-08-10'] });
     expect(cardapio.map((c) => c.categoria).sort()).toEqual(['almoco', 'cafe', 'jantar']);
+  });
+
+  test('regenerar com outro embaralhador troca as receitas escolhidas, respeitando as regras', () => {
+    // Duas opções de café empatadas no mesmo dia: a escolha muda conforme o
+    // embaralhador — é o que faz o botão "Gerar" render um cardápio novo.
+    const base = { receitas, preferencias: {}, dias: ['2026-08-10'] };
+    const cafePadrao = gerarCardapio(base).cardapio.find((c) => c.categoria === 'cafe').receita.id;
+    const cafeInvertido = gerarCardapio({ ...base, embaralhar: (arr) => [...arr].reverse() }).cardapio.find(
+      (c) => c.categoria === 'cafe'
+    ).receita.id;
+
+    expect(cafePadrao).toBe(1); // determinístico por id sem embaralhador
+    expect(cafeInvertido).toBe(2); // outra opção válida quando embaralhado
   });
 });

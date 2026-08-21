@@ -50,7 +50,7 @@ export function CardapioMes() {
           {dias.map((dia) => {
             const entradas = entradasDoDia(dia);
             return (
-              <div key={dia} className={styles.linha}>
+              <div key={dia} className={styles.linha} data-testid={`dia-mes-${dia}`}>
                 <div className={styles.data}>
                   <span className={styles.diaNumero}>{diaCurto(dia)}</span>
                   <span className={styles.diaSemana}>{nomeDiaSemana(dia)}</span>
@@ -60,9 +60,15 @@ export function CardapioMes() {
                     <span className={styles.semCardapio}>Sem cardápio</span>
                   ) : (
                     entradas.map((entrada) => (
-                      <span key={entrada.categoria} className={styles.item}>
+                      <span
+                        key={entrada.categoria}
+                        className={styles.item}
+                        data-testid={`item-mes-${entrada.categoria}-${dia}`}
+                      >
                         <CategoriaSelo categoria={entrada.categoria} tamanho="sm" />
-                        <span className={styles.nomeReceita}>{entrada.receita.nome}</span>
+                        <span className={styles.nomeReceita} data-testid="nome-receita">
+                          {entrada.receita.nome}
+                        </span>
                       </span>
                     ))
                   )}

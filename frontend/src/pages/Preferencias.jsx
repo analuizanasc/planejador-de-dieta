@@ -59,7 +59,6 @@ export function Preferencias() {
                 key={cat}
                 type="button"
                 className={`${styles.pilula} ${ativa ? styles.pilulaAtiva : ''}`}
-                style={ativa ? { '--cor-pilula': CATEGORIA_META[cat].cor, '--fundo-pilula': CATEGORIA_META[cat].fundo } : undefined}
                 onClick={() => alternar(categoriasAtivas, setCategoriasAtivas, cat)}
               >
                 {CATEGORIA_META[cat].rotulo}

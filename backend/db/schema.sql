@@ -39,20 +39,44 @@ INSERT INTO restricoes (codigo, nome) VALUES
   ('acucar_refinado', 'Açúcar refinado');
 
 -- ============================================================
+-- Caderno de receitas (pasta, escopada por usuário)
+-- ============================================================
+
+CREATE TABLE cadernos (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  nome       TEXT NOT NULL,
+  UNIQUE (usuario_id, nome)
+);
+
+CREATE INDEX idx_cadernos_usuario ON cadernos(usuario_id);
+
+-- ============================================================
 -- Receita (escopada por usuário)
 -- ============================================================
 
 CREATE TABLE receitas (
   id                INTEGER PRIMARY KEY AUTOINCREMENT,
   usuario_id        INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  caderno_id        INTEGER REFERENCES cadernos(id) ON DELETE SET NULL,
   nome              TEXT NOT NULL,
-  categoria         TEXT NOT NULL REFERENCES categorias(codigo),
-  calorias          INTEGER NOT NULL CHECK (calorias >= 0),
+  calorias          INTEGER CHECK (calorias IS NULL OR calorias >= 0),
+  modo_preparo      TEXT,
+  imagem_url        TEXT,
   permite_repeticao INTEGER NOT NULL DEFAULT 0 CHECK (permite_repeticao IN (0, 1))
 );
 
 CREATE INDEX idx_receitas_usuario ON receitas(usuario_id);
-CREATE INDEX idx_receitas_categoria ON receitas(categoria);
+CREATE INDEX idx_receitas_caderno ON receitas(caderno_id);
+
+-- categorias: uma receita pode pertencer a várias -> tabela associativa N:N
+CREATE TABLE receita_categorias (
+  receita_id INTEGER NOT NULL REFERENCES receitas(id) ON DELETE CASCADE,
+  categoria  TEXT NOT NULL REFERENCES categorias(codigo),
+  PRIMARY KEY (receita_id, categoria)
+);
+
+CREATE INDEX idx_receita_categorias_categoria ON receita_categorias(categoria);
 
 -- ingredientes: array -> tabela filha (ordem preserva a sequência original)
 CREATE TABLE receita_ingredientes (

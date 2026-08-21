@@ -39,28 +39,52 @@ function receitaCompativel(receita, restricoesUsuario) {
  */
 function filtrarCandidatas(receitas, categoria, restricoesUsuario, receitaIdOntem) {
   return receitas.filter((r) => {
-    if (r.categoria !== categoria) return false;
+    if (!(r.categorias || []).includes(categoria)) return false;
     if (!receitaCompativel(r, restricoesUsuario)) return false;
     if (r.id === receitaIdOntem && !r.permite_repeticao) return false;
     return true;
   });
 }
 
+// Desempate padrão: menor id primeiro. Mantém a geração determinística e
+// testável quando nenhum embaralhador é injetado.
+function ordenarPorId(candidatas) {
+  return [...candidatas].sort((a, b) => a.id - b.id);
+}
+
+// Embaralhador (Fisher-Yates) usado pela rota para que regenerar produza um
+// cardápio DIFERENTE a cada clique, sem perder as regras (RN1/RN3/RN4).
+function embaralharAleatorio(candidatas, aleatorio = Math.random) {
+  const copia = [...candidatas];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(aleatorio() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
 /**
  * Seleção SEM meta calórica: escolhe uma candidata por categoria buscando
  * variedade — menos usada recentemente primeiro (LRU), desempate por menor
- * contagem de uso e por menor id (determinístico e testável).
+ * contagem de uso. Entre as empatadas no topo, `embaralhar` decide qual sai
+ * (padrão: menor id, determinístico; a rota injeta um embaralhador aleatório).
  */
-function selecionarSemMeta(candidata, ultimoUso, contagemUso) {
-  return [...candidata].sort((a, b) => {
-    const ua = ultimoUso.has(a.id) ? ultimoUso.get(a.id) : -1;
-    const ub = ultimoUso.has(b.id) ? ultimoUso.get(b.id) : -1;
-    if (ua !== ub) return ua - ub; // usada há mais tempo (ou nunca) vem antes
-    const ca = contagemUso.get(a.id) || 0;
-    const cb = contagemUso.get(b.id) || 0;
-    if (ca !== cb) return ca - cb;
-    return a.id - b.id;
-  })[0];
+function selecionarSemMeta(candidatas, ultimoUso, contagemUso, embaralhar = ordenarPorId) {
+  const prioridade = (r) => [
+    ultimoUso.has(r.id) ? ultimoUso.get(r.id) : -1,
+    contagemUso.get(r.id) || 0,
+  ];
+  const ordenadas = [...candidatas].sort((a, b) => {
+    const [ua, ca] = prioridade(a);
+    const [ub, cb] = prioridade(b);
+    return ua !== ub ? ua - ub : ca - cb;
+  });
+  const [melhorUso, melhorContagem] = prioridade(ordenadas[0]);
+  const empatadas = ordenadas.filter((r) => {
+    const [uso, contagem] = prioridade(r);
+    return uso === melhorUso && contagem === melhorContagem;
+  });
+  return embaralhar(empatadas)[0];
 }
 
 /**
@@ -74,14 +98,16 @@ function selecionarSemMeta(candidata, ultimoUso, contagemUso) {
  *
  * `slots` = [{ categoria, candidatas: [...] }], todas com pelo menos 1 candidata.
  */
-function selecionarComMeta(slots, meta) {
+function selecionarComMeta(slots, meta, embaralhar = ordenarPorId) {
   // Estado: soma parcial -> lista de receitas escolhidas (uma por categoria).
   let estados = new Map([[0, []]]);
 
   for (const slot of slots) {
     const proximos = new Map();
-    // Ordena candidatas por id para tornar a combinação determinística em empates.
-    const candidatas = [...slot.candidatas].sort((a, b) => a.id - b.id);
+    // A ordem das candidatas decide qual combinação fica quando duas somam o
+    // mesmo total. `embaralhar` (padrão: por id) mantém isso determinístico nos
+    // testes e permite variar a regeneração quando a rota injeta o aleatório.
+    const candidatas = embaralhar(slot.candidatas);
 
     for (const [soma, escolhidas] of estados) {
       for (const receita of candidatas) {
@@ -142,7 +168,7 @@ function resolverCategoriasAtivas(categoriasAtivas) {
  *                                                dia (para RN1 na fronteira).
  * @returns {{ cardapio: Array, erros: Array }}
  */
-function gerarCardapio({ receitas, preferencias, dias, historicoAnterior } = {}) {
+function gerarCardapio({ receitas, preferencias, dias, historicoAnterior, embaralhar = ordenarPorId } = {}) {
   if (!Array.isArray(receitas)) {
     throw new Error('receitas deve ser um array');
   }
@@ -195,7 +221,7 @@ function gerarCardapio({ receitas, preferencias, dias, historicoAnterior } = {})
     // 2. Seleção do dia.
     let escolhidasPorCategoria;
     if (meta !== null) {
-      const escolhidas = selecionarComMeta(slots, meta);
+      const escolhidas = selecionarComMeta(slots, meta, embaralhar);
       escolhidasPorCategoria = slots.map((slot, i) => ({
         categoria: slot.categoria,
         receita: escolhidas[i],
@@ -203,7 +229,7 @@ function gerarCardapio({ receitas, preferencias, dias, historicoAnterior } = {})
     } else {
       escolhidasPorCategoria = slots.map((slot) => ({
         categoria: slot.categoria,
-        receita: selecionarSemMeta(slot.candidatas, ultimoUso, contagemUso),
+        receita: selecionarSemMeta(slot.candidatas, ultimoUso, contagemUso, embaralhar),
       }));
     }
 
@@ -228,6 +254,8 @@ module.exports = {
   selecionarSemMeta,
   selecionarComMeta,
   resolverCategoriasAtivas,
+  ordenarPorId,
+  embaralharAleatorio,
   CATEGORIAS_VALIDAS,
   CATEGORIAS_PADRAO,
 };

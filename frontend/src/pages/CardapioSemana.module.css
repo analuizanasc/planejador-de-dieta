@@ -12,13 +12,8 @@
 
 .grade {
   display: grid;
-  grid-template-columns: 120px repeat(var(--colunas), minmax(130px, 1fr));
+  grid-template-columns: repeat(var(--colunas), minmax(0, 1fr));
   gap: var(--espaco-2);
-  overflow-x: auto;
-}
-
-.celulaCabecalho {
-  min-width: 0;
 }
 
 .cabecalhoDia {
@@ -39,10 +34,4 @@
 .diaNumero {
   font: var(--texto-display-sm);
   color: var(--tinta-primaria);
-}
-
-.rotuloLinha {
-  display: flex;
-  align-items: center;
-  padding: var(--espaco-2) 0;
 }

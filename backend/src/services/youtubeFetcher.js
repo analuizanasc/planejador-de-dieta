@@ -30,10 +30,23 @@ function criarYoutubeFetcher({ apiKey = process.env.YOUTUBE_API_KEY, fetchFn = f
     const snippet = dados && dados.items && dados.items[0] && dados.items[0].snippet;
     if (!snippet) return null;
 
-    return { titulo: snippet.title || '', descricao: snippet.description || '' };
+    return {
+      titulo: snippet.title || '',
+      descricao: snippet.description || '',
+      imagem: melhorThumbnail(snippet.thumbnails),
+    };
   }
 
   return { buscar };
 }
 
-module.exports = { criarYoutubeFetcher, extrairVideoId };
+// Escolhe a maior thumbnail disponível (a API nem sempre entrega todas).
+function melhorThumbnail(thumbnails) {
+  if (!thumbnails || typeof thumbnails !== 'object') return null;
+  for (const chave of ['maxres', 'standard', 'high', 'medium', 'default']) {
+    if (thumbnails[chave] && thumbnails[chave].url) return thumbnails[chave].url;
+  }
+  return null;
+}
+
+module.exports = { criarYoutubeFetcher, extrairVideoId, melhorThumbnail };

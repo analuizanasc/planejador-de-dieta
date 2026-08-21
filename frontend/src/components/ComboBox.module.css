@@ -1,0 +1,75 @@
+.raiz {
+  position: relative;
+}
+
+.campo {
+  width: 100%;
+  background: var(--papel-inset);
+  border: 1.5px solid var(--borda);
+  border-radius: var(--raio-sm);
+  padding: var(--espaco-2) var(--espaco-3);
+  font-size: 14px;
+  color: var(--tinta-primaria);
+}
+
+.campo:focus {
+  outline: none;
+  border-color: var(--anel-foco);
+  background: var(--papel-elevado);
+}
+
+.campo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.campo::placeholder {
+  color: var(--tinta-muted);
+}
+
+.lista {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--espaco-1));
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--espaco-2);
+  list-style: none;
+  background: var(--papel-elevado);
+  border: 1.5px solid var(--borda);
+  border-radius: var(--raio-md);
+  box-shadow: var(--sombra-lg);
+}
+
+.grupo {
+  padding: var(--espaco-2) var(--espaco-3) var(--espaco-1);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tinta-terciaria);
+}
+
+.opcao {
+  padding: var(--espaco-2) var(--espaco-3);
+  border-radius: var(--raio-sm);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ativa {
+  background: var(--papel-inset);
+}
+
+.selecionada {
+  font-weight: 600;
+}
+
+.vazio {
+  padding: var(--espaco-3);
+  color: var(--tinta-terciaria);
+  font-size: 13px;
+}

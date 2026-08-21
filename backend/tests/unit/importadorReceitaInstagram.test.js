@@ -130,6 +130,43 @@ describe('criarImportadorReceita.importar', () => {
     expect(textoEnviado).toContain('1 banana, 2 ovos');
   });
 
+  test('Instagram: a imagem do post entra no rascunho como imagem_url', async () => {
+    const { importador } = montar({
+      post: { legenda: LEGENDA_LONGA, titulo: '', urlVideo: null, imagem: 'https://cdn/foto.jpg' },
+    });
+
+    const r = await importador.importar('https://www.instagram.com/p/ABC/');
+    expect(r.draft.imagem_url).toBe('https://cdn/foto.jpg');
+  });
+
+  test('vídeo: o modo de preparo extraído entra no rascunho', async () => {
+    const draftComPreparo = { ...DRAFT_OK, modo_preparo: '1. Bata\n2. Frite' };
+    const { importador } = montar({
+      post: { legenda: LEGENDA_LONGA, titulo: '', urlVideo: null },
+      extrairImpl: jest.fn().mockResolvedValue(draftComPreparo),
+    });
+
+    const r = await importador.importar('https://www.instagram.com/reel/ABC/');
+    expect(r.draft.modo_preparo).toBe('1. Bata\n2. Frite');
+  });
+
+  test('YouTube: a thumbnail do vídeo entra no rascunho como imagem_url', async () => {
+    const extrator = { extrairReceita: jest.fn().mockResolvedValue({ ...DRAFT_OK }) };
+    const youtubeFetcher = {
+      buscar: jest
+        .fn()
+        .mockResolvedValue({ titulo: 'Bolo', descricao: '2 ovos, farinha', imagem: 'https://i/thumb.jpg' }),
+    };
+    const importador = criarImportadorReceita({
+      extrator,
+      youtubeFetcher,
+      validarComAvisos: (b) => ({ dados: b, avisos: [] }),
+    });
+
+    const r = await importador.importar('https://youtu.be/abc123');
+    expect(r.draft.imagem_url).toBe('https://i/thumb.jpg');
+  });
+
   test('erro do scraper propaga (hard-fail)', async () => {
     const scraper = { buscarPost: jest.fn().mockRejectedValue(new AppError(422, 'bloqueado')) };
     const importador = criarImportadorReceita({ scraper });

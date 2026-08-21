@@ -53,6 +53,26 @@ function validarArrayDeStrings(valor, campo, { opcional = false, valoresAceitos 
   return valor;
 }
 
+// Campo de texto opcional: null/ausente vira null; string é aparada e, se
+// ficar vazia, também vira null. Qualquer outro tipo é rejeitado.
+function validarTextoOpcional(valor, campo) {
+  if (valor === undefined || valor === null) return null;
+  if (typeof valor !== 'string') {
+    throw new AppError(400, `${campo} deve ser uma string`);
+  }
+  const aparado = valor.trim();
+  return aparado.length > 0 ? aparado : null;
+}
+
+// Id opcional (FK): null/ausente vira null; caso contrário, inteiro positivo.
+function validarIdOpcional(valor, campo) {
+  if (valor === undefined || valor === null) return null;
+  if (!Number.isInteger(valor) || valor <= 0) {
+    throw new AppError(400, `${campo} deve ser um inteiro positivo ou null`);
+  }
+  return valor;
+}
+
 function validarReceitaPayload(body, { parcial = false } = {}) {
   if (!body || typeof body !== 'object') {
     throw new AppError(400, 'Corpo da requisição inválido');
@@ -67,15 +87,31 @@ function validarReceitaPayload(body, { parcial = false } = {}) {
     dados.nome = body.nome.trim();
   }
 
-  if (!parcial || body.categoria !== undefined) {
-    dados.categoria = validarCategoria(body.categoria);
+  if (!parcial || body.categorias !== undefined) {
+    const categorias = validarArrayDeStrings(body.categorias, 'categorias', {
+      opcional: parcial,
+      valoresAceitos: CATEGORIAS_VALIDAS,
+    });
+    if (categorias.length === 0) {
+      throw new AppError(400, 'categorias deve conter ao menos 1 item');
+    }
+    dados.categorias = [...new Set(categorias)];
   }
 
+  // calorias é opcional: null (ou ausente) representa "não informado".
+  // Quando informado, precisa ser um número >= 0.
   if (!parcial || body.calorias !== undefined) {
-    if (typeof body.calorias !== 'number' || !Number.isFinite(body.calorias) || body.calorias < 0) {
-      throw new AppError(400, 'calorias é obrigatório e deve ser um número >= 0');
+    if (body.calorias === undefined || body.calorias === null) {
+      dados.calorias = null;
+    } else if (
+      typeof body.calorias !== 'number' ||
+      !Number.isFinite(body.calorias) ||
+      body.calorias < 0
+    ) {
+      throw new AppError(400, 'calorias deve ser um número >= 0 ou null');
+    } else {
+      dados.calorias = body.calorias;
     }
-    dados.calorias = body.calorias;
   }
 
   if (!parcial || body.ingredientes !== undefined) {
@@ -85,6 +121,18 @@ function validarReceitaPayload(body, { parcial = false } = {}) {
     if (!parcial && dados.ingredientes.length === 0) {
       throw new AppError(400, 'ingredientes deve conter ao menos 1 item');
     }
+  }
+
+  if (!parcial || body.modo_preparo !== undefined) {
+    dados.modo_preparo = validarTextoOpcional(body.modo_preparo, 'modo_preparo');
+  }
+
+  if (!parcial || body.imagem_url !== undefined) {
+    dados.imagem_url = validarTextoOpcional(body.imagem_url, 'imagem_url');
+  }
+
+  if (!parcial || body.caderno_id !== undefined) {
+    dados.caderno_id = validarIdOpcional(body.caderno_id, 'caderno_id');
   }
 
   if (!parcial || body.tags_restricao !== undefined) {
@@ -121,11 +169,16 @@ function validarReceitaComAvisos(bruto) {
     avisos.push('Não identificamos o nome da receita; preencha antes de salvar.');
   }
 
-  if (CATEGORIAS_VALIDAS.includes(origem.categoria)) {
-    dados.categoria = origem.categoria;
-  } else {
-    dados.categoria = null;
-    avisos.push('Categoria não reconhecida; selecione uma categoria válida.');
+  // Aceita `categorias` (array) do modelo novo ou `categoria` (string) legada.
+  const categoriasBrutas = Array.isArray(origem.categorias)
+    ? origem.categorias
+    : typeof origem.categoria === 'string'
+      ? [origem.categoria]
+      : [];
+  const categoriasValidas = [...new Set(categoriasBrutas.filter((c) => CATEGORIAS_VALIDAS.includes(c)))];
+  dados.categorias = categoriasValidas;
+  if (categoriasValidas.length === 0) {
+    avisos.push('Categoria não reconhecida; selecione ao menos uma categoria válida.');
   }
 
   if (typeof origem.calorias === 'number' && Number.isFinite(origem.calorias) && origem.calorias >= 0) {
@@ -142,6 +195,16 @@ function validarReceitaComAvisos(bruto) {
   if (ingredientes.length === 0) {
     avisos.push('Nenhum ingrediente foi identificado; adicione os ingredientes antes de salvar.');
   }
+
+  dados.modo_preparo =
+    typeof origem.modo_preparo === 'string' && origem.modo_preparo.trim().length > 0
+      ? origem.modo_preparo.trim()
+      : null;
+
+  dados.imagem_url =
+    typeof origem.imagem_url === 'string' && origem.imagem_url.trim().length > 0
+      ? origem.imagem_url.trim()
+      : null;
 
   if (Array.isArray(origem.tags_restricao)) {
     const validas = origem.tags_restricao.filter((t) => RESTRICOES_VALIDAS.includes(t));
@@ -225,6 +288,16 @@ function validarRegistroPayload(body) {
   return { email: body.email.trim().toLowerCase(), senha: body.senha, nome: body.nome.trim() };
 }
 
+function validarCadernoPayload(body) {
+  if (!body || typeof body !== 'object') {
+    throw new AppError(400, 'Corpo da requisição inválido');
+  }
+  if (typeof body.nome !== 'string' || body.nome.trim().length === 0) {
+    throw new AppError(400, 'nome é obrigatório e deve ser uma string não vazia');
+  }
+  return { nome: body.nome.trim() };
+}
+
 function validarLoginPayload(body) {
   if (!body || typeof body !== 'object') {
     throw new AppError(400, 'Corpo da requisição inválido');
@@ -250,6 +323,7 @@ module.exports = {
   validarReceitaPayload,
   validarReceitaComAvisos,
   validarPreferenciasPayload,
+  validarCadernoPayload,
   validarRegistroPayload,
   validarLoginPayload,
 };

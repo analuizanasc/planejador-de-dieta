@@ -53,6 +53,7 @@ function criarImportadorReceita({
   // descrição não render uma receita utilizável ou se a API não estiver configurada.
   async function importarYoutube(url) {
     const info = await youtubeFetcher.buscar(url);
+    const imagem = info?.imagem || null;
     if (info) {
       const texto = [info.titulo, info.descricao].filter(Boolean).join('\n').trim();
       if (texto) {
@@ -60,7 +61,7 @@ function criarImportadorReceita({
         const { dados, avisos } = validarComAvisos(bruto);
         // Descrição rendeu ingredientes → não precisa assistir ao vídeo.
         if (dados.ingredientes.length > 0) {
-          return { draft: dados, avisos, fonte: 'descricao' };
+          return { draft: comImagem(dados, imagem), avisos, fonte: 'descricao' };
         }
       }
     }
@@ -68,11 +69,11 @@ function criarImportadorReceita({
     // Fallback: manda a URL do vídeo pro Gemini assistir.
     const bruto = await extrator.extrairReceita({ youtubeUrl: url.trim() });
     const { dados, avisos } = validarComAvisos(bruto);
-    return { draft: dados, avisos, fonte: 'youtube' };
+    return { draft: comImagem(dados, imagem), avisos, fonte: 'youtube' };
   }
 
   async function importarInstagram(url) {
-    const { legenda, titulo, urlVideo, comentarios = [] } = await scraper.buscarPost(url);
+    const { legenda, titulo, urlVideo, imagem, comentarios = [] } = await scraper.buscarPost(url);
 
     const avisos = [];
     // Comentários entram no texto analisado: receitas costumam vir fixadas no
@@ -102,10 +103,16 @@ function criarImportadorReceita({
     const bruto = await extrator.extrairReceita({ legenda: textoBase, video });
     const { dados, avisos: avisosValidacao } = validarComAvisos(bruto);
 
-    return { draft: dados, avisos: [...avisos, ...avisosValidacao], fonte };
+    return { draft: comImagem(dados, imagem), avisos: [...avisos, ...avisosValidacao], fonte };
   }
 
   return { importar };
+}
+
+// Preenche imagem_url com a mídia do post/vídeo quando a IA não trouxe uma.
+function comImagem(dados, imagem) {
+  if (dados.imagem_url || !imagem) return dados;
+  return { ...dados, imagem_url: imagem };
 }
 
 module.exports = { criarImportadorReceita, legendaInsuficiente, TAMANHO_MINIMO_LEGENDA };

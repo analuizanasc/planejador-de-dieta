@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import styles from './Campo.module.css';
 
 export function Campo({ rotulo, erro, dica, children, id }) {
@@ -10,6 +11,6 @@ export function Campo({ rotulo, erro, dica, children, id }) {
   );
 }
 
-export function Input(props) {
-  return <input className={styles.input} {...props} />;
-}
+export const Input = forwardRef(function Input(props, ref) {
+  return <input ref={ref} className={styles.input} {...props} />;
+});

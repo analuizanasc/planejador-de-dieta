@@ -2,11 +2,11 @@ import { Fragment, useMemo, useState } from 'react';
 import { useCardapio } from '../hooks/useCardapio';
 import { useGerarCardapio } from '../hooks/useGerarCardapio';
 import { useReceitas } from '../hooks/useReceitas';
+import { useCadernos } from '../hooks/useCadernos';
 import { usePreferencias } from '../hooks/usePreferencias';
 import { CabecalhoPagina } from '../components/CabecalhoPagina';
 import { CelulaCardapio } from '../components/CelulaCardapio';
 import { MedidorMeta } from '../components/MedidorMeta';
-import { CategoriaSelo } from '../components/CategoriaSelo';
 import { Botao } from '../components/Botao';
 import { Alerta } from '../components/Alerta';
 import { EstadoCarregando } from '../components/EstadoCarregando';
@@ -22,6 +22,7 @@ export function CardapioSemana() {
   });
   const { preferencias } = usePreferencias();
   const { receitas } = useReceitas();
+  const { cadernos } = useCadernos();
   const { gerar, gerando, erro: erroGeracao } = useGerarCardapio();
   const [erros, setErros] = useState([]);
 
@@ -29,13 +30,20 @@ export function CardapioSemana() {
   const categoriasAtivas = preferencias?.categorias_ativas || [];
   const linhas = CATEGORIAS_ORDEM.filter((c) => categoriasAtivas.includes(c));
 
+  const nomeDoCaderno = useMemo(() => {
+    const mapa = new Map(cadernos.map((c) => [c.id, c.nome]));
+    return (cadernoId) => (cadernoId == null ? 'Sem caderno' : mapa.get(cadernoId) ?? 'Sem caderno');
+  }, [cadernos]);
+
   const receitasPorCategoria = useMemo(() => {
     const mapa = {};
     for (const cat of CATEGORIAS_ORDEM) {
-      mapa[cat] = receitas.filter((r) => r.categoria === cat).map((r) => ({ valor: r.id, rotulo: r.nome }));
+      mapa[cat] = receitas
+        .filter((r) => r.categorias.includes(cat))
+        .map((r) => ({ valor: r.id, rotulo: r.nome, grupo: nomeDoCaderno(r.caderno_id) }));
     }
     return mapa;
-  }, [receitas]);
+  }, [receitas, nomeDoCaderno]);
 
   function entradaDe(dia, categoria) {
     return cardapio.find((c) => c.dia === dia && c.categoria === categoria);
@@ -97,7 +105,6 @@ export function CardapioSemana() {
         <Alerta tipo="aviso">Nenhuma categoria ativa nas preferências ainda.</Alerta>
       ) : (
         <div className={styles.grade} style={{ '--colunas': dias.length }}>
-          <div className={styles.celulaCabecalho} />
           {dias.map((dia) => (
             <div key={dia} className={styles.cabecalhoDia}>
               <span className={styles.diaSemana}>{nomeDiaSemana(dia)}</span>
@@ -110,9 +117,6 @@ export function CardapioSemana() {
 
           {linhas.map((categoria) => (
             <Fragment key={categoria}>
-              <div className={styles.rotuloLinha}>
-                <CategoriaSelo categoria={categoria} />
-              </div>
               {dias.map((dia) => {
                 const entrada = entradaDe(dia, categoria);
                 const erroCelula = erros.find((e) => e.dia === dia && e.categoria === categoria);

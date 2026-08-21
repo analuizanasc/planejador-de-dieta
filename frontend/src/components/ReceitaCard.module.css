@@ -1,11 +1,17 @@
+/*
+  Card de altura FIXA (spec do grid de receitas, opção 1a): 344px sempre, com
+  ou sem foto, com título de 1–3 linhas ou 0–5 tags. A estrutura media → corpo
+  (meta, título, tags, espaçador, footer) é o que garante a altura constante.
+*/
 .card {
+  box-sizing: border-box;
+  height: 344px;
   display: flex;
   flex-direction: column;
-  gap: var(--espaco-3);
-  padding: var(--espaco-5);
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--borda);
   background: var(--papel-elevado);
-  border: 1.5px solid var(--borda);
-  border-radius: var(--raio-md);
   box-shadow: var(--sombra-sm);
   transition: transform var(--transicao-media), box-shadow var(--transicao-media);
 }
@@ -15,42 +21,114 @@
   box-shadow: var(--sombra-md);
 }
 
-.topo {
+/*
+  Faixa de mídia: nunca cresce nem encolhe; a foto não dita a altura. A textura
+  do estado vazio já fica no fundo — assim, durante o carregamento (ou se a foto
+  falhar) a faixa não pisca (CLS = 0); a imagem, quando carrega, cobre a textura.
+*/
+.midia {
+  position: relative;
+  flex: 0 0 132px;
+  overflow: hidden;
+  background-color: #f3eada;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(30, 58, 43, 0.05) 0 1px,
+    transparent 1px 9px
+  );
+}
+
+.imagem {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Estado sem foto: a inicial da receita em serifa itálica, canto inferior. */
+.midiaVazia::after {
+  content: attr(data-inicial);
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  font-family: var(--fonte-display);
+  font-style: italic;
+  font-size: 26px;
+  color: #c6b79c;
+}
+
+.corpo {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 12px;
+}
+
+.meta {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: var(--espaco-2);
+}
+
+.selos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-1);
 }
 
 .calorias {
-  font-size: 13px;
+  flex-shrink: 0;
+  font-size: 12px;
   color: var(--tinta-terciaria);
 }
 
+/* Título travado em 2 linhas (46px) mesmo quando ocupa só uma. */
 .nome {
-  font: var(--texto-display-sm);
+  margin: 0;
+  height: 46px;
+  overflow: hidden;
+  font-family: var(--fonte-ui);
+  font-size: 19px;
+  line-height: 1.2;
+  font-weight: 700;
   color: var(--tinta-primaria);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-.ingredientes {
-  font-size: 13px;
+/* Faixa de tags de altura reservada: 2 tags + "+N" cabem sem esticar o card. */
+.tags {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.maisTags {
+  font-size: 11px;
+  font-weight: 700;
   color: var(--tinta-terciaria);
-  line-height: 1.5;
+}
+
+/* Empurra o footer para a base, alinhando os botões em toda a fileira. */
+.espacador {
+  flex: 1 1 auto;
 }
 
 .rodape {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--espaco-3);
-  margin-top: auto;
-  padding-top: var(--espaco-2);
+  gap: var(--espaco-2);
+  padding-top: 10px;
   border-top: 1px solid var(--borda-suave);
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--espaco-1);
 }
 
 .repete {
@@ -61,6 +139,17 @@
 
 .acoes {
   display: flex;
-  gap: var(--espaco-1);
-  flex-shrink: 0;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* Mobile: 1 coluna, card mais baixo e faixa menor (spec §6). */
+@media (max-width: 767px) {
+  .card {
+    height: 300px;
+  }
+
+  .midia {
+    flex-basis: 120px;
+  }
 }

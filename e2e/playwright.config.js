@@ -23,6 +23,10 @@ module.exports = defineConfig({
   use: {
     baseURL: `http://localhost:${PORTA_FRONTEND}`,
     trace: 'retain-on-failure',
+    // Padrão só grava vídeo de teste que falhou (mesmo critério do trace).
+    // Para gravar TODOS os testes de uma run (ex.: demo, revisão manual):
+    // PLAYWRIGHT_VIDEO=on npx playwright test
+    video: process.env.PLAYWRIGHT_VIDEO || 'retain-on-failure',
   },
   webServer: [
     {

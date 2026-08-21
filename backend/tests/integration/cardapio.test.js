@@ -229,7 +229,7 @@ describe('/cardapio', () => {
       });
       expect(resposta.status).toBe(400);
       expect(resposta.body.erro).toBe(
-        `Receita ${almoco.id} pertence à categoria 'almoco', não 'cafe'`
+        `Receita ${almoco.id} não pertence à categoria 'cafe' (categorias: almoco)`
       );
     });
 

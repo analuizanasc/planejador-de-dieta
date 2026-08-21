@@ -29,6 +29,41 @@
   background: var(--papel-elevado);
 }
 
+.ingredientes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+}
+
+.linhaIngrediente {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.linhaIngrediente > :first-child {
+  flex: 1;
+}
+
+.imagemPreview {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-3);
+  margin-bottom: var(--espaco-3);
+}
+
+.imagemPreview img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border: 1.5px solid var(--borda);
+  border-radius: var(--raio-sm);
+}
+
+.inputArquivoOculto {
+  display: none;
+}
+
 .rotuloGrupo {
   font: var(--texto-legenda);
   color: var(--tinta-secundaria);

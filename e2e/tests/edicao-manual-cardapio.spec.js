@@ -62,7 +62,10 @@ test('troca manualmente a receita de um dia e a troca sobrevive a um reload real
   await expect(celula.getByTestId('nome-receita')).not.toHaveCSS('text-decoration-style', 'wavy');
 
   await celula.click();
-  await page.locator(`[data-testid="${testId}"] button[aria-haspopup="listbox"]`).click();
+  // Combobox com busca: digitar filtra as opções (facilita achar a receita).
+  const campoBusca = page.locator(`[data-testid="${testId}"] input[role="combobox"]`);
+  await campoBusca.click();
+  await campoBusca.fill(outraOpcao);
   await page.getByRole('option', { name: outraOpcao }).click();
 
   const celulaAtualizada = page.getByTestId(testId);

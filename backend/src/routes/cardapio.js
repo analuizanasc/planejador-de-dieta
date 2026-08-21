@@ -5,7 +5,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const AppError = require('../utils/AppError');
 const { validarData, validarCategoria } = require('../utils/validators');
 const { inicioFimSemana, inicioFimMes, somarDias } = require('../utils/datas');
-const { gerarCardapio } = require('../services/geradorCardapio');
+const { gerarCardapio, embaralharAleatorio } = require('../services/geradorCardapio');
 
 const receitasRepo = require('../repositories/receitasRepository');
 const preferenciasRepo = require('../repositories/preferenciasRepository');
@@ -55,7 +55,16 @@ module.exports = function criarRotasCardapio(db) {
       const receitas = receitasRepo.listarReceitas(db, req.usuarioId);
       const historicoAnterior = cardapioRepo.obterHistoricoAnterior(db, req.usuarioId, dias[0]);
 
-      const resultado = gerarCardapio({ receitas, preferencias, dias, historicoAnterior });
+      // Embaralhador aleatório: regenerar o mesmo período rende um cardápio
+      // diferente a cada clique (as refeições são substituídas pelas novas),
+      // sempre respeitando restrições, não-repetição e meta calórica.
+      const resultado = gerarCardapio({
+        receitas,
+        preferencias,
+        dias,
+        historicoAnterior,
+        embaralhar: embaralharAleatorio,
+      });
 
       if (resultado.cardapio.length > 0) {
         cardapioRepo.persistirCardapio(db, req.usuarioId, resultado.cardapio);
@@ -84,10 +93,10 @@ module.exports = function criarRotasCardapio(db) {
 
       const receita = receitasRepo.buscarReceitaPorId(db, req.usuarioId, receitaId);
       if (!receita) throw new AppError(404, `Receita ${receitaId} não encontrada`);
-      if (receita.categoria !== categoria) {
+      if (!receita.categorias.includes(categoria)) {
         throw new AppError(
           400,
-          `Receita ${receitaId} pertence à categoria '${receita.categoria}', não '${categoria}'`
+          `Receita ${receitaId} não pertence à categoria '${categoria}' (categorias: ${receita.categorias.join(', ')})`
         );
       }
 

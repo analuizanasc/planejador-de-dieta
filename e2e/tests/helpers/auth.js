@@ -17,4 +17,13 @@ async function entrarComSessao(page, { token, usuario }) {
   await page.reload();
 }
 
-module.exports = { entrarComSessao };
+// Lê o token que a própria UI guardou após um registro/login real pela tela
+// (ao contrário de entrarComSessao, que injeta um token obtido via API) —
+// usado quando um teste de fluxo completo precisa de um token só para
+// setup adicional via API (ex.: popular um catálogo grande de receitas)
+// depois que a usuária já entrou pela UI.
+function lerTokenDaSessao(page) {
+  return page.evaluate(() => localStorage.getItem('planejador-dieta:token'));
+}
+
+module.exports = { entrarComSessao, lerTokenDaSessao };

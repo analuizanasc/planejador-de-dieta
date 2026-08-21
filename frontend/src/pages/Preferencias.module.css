@@ -43,10 +43,12 @@
   transition: all var(--transicao-rapida);
 }
 
+/* Seleção uniforme (verde-caatinga claro) para todas as categorias ativas —
+   sem cor por categoria, como pedido. */
 .pilulaAtiva {
   border-color: transparent;
-  color: var(--cor-pilula);
-  background: var(--fundo-pilula);
+  color: var(--erva);
+  background: var(--erva-fundo);
 }
 
 .pilulaRestricao {

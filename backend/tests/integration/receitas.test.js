@@ -41,7 +41,7 @@ describe('/receitas', () => {
 
     const resposta = await auth(request(app).get('/receitas?categoria=almoco'));
     expect(resposta.body).toHaveLength(1);
-    expect(resposta.body[0].categoria).toBe('almoco');
+    expect(resposta.body[0].categorias).toContain('almoco');
   });
 
   test('GET ?categoria inválida retorna 400', async () => {
@@ -97,5 +97,70 @@ describe('/receitas', () => {
     const { nome, ...semNome } = umaReceita().build();
     const resposta = await auth(request(app).post('/receitas')).send(semNome);
     expect(resposta.status).toBe(400);
+  });
+
+  test('POST cria receita com múltiplas categorias e o filtro ?categoria acha em cada uma', async () => {
+    const payload = umaReceita().comNome('Cuscuz').comCategorias(['cafe', 'lanche']).build();
+    const criada = await auth(request(app).post('/receitas')).send(payload);
+    expect(criada.status).toBe(201);
+    expect(criada.body.categorias.sort()).toEqual(['cafe', 'lanche']);
+
+    const noCafe = await auth(request(app).get('/receitas?categoria=cafe'));
+    const noLanche = await auth(request(app).get('/receitas?categoria=lanche'));
+    const noAlmoco = await auth(request(app).get('/receitas?categoria=almoco'));
+    expect(noCafe.body.map((r) => r.nome)).toContain('Cuscuz');
+    expect(noLanche.body.map((r) => r.nome)).toContain('Cuscuz');
+    expect(noAlmoco.body.map((r) => r.nome)).not.toContain('Cuscuz');
+  });
+
+  test('POST com categorias vazio retorna 400', async () => {
+    const resposta = await auth(request(app).post('/receitas')).send(
+      umaReceita().comCategorias([]).build()
+    );
+    expect(resposta.status).toBe(400);
+  });
+
+  test('POST cria receita sem calorias (campo opcional) e persiste calorias null', async () => {
+    const payload = umaReceita().comNome('Salada').semCalorias().build();
+    const resposta = await auth(request(app).post('/receitas')).send(payload);
+
+    expect(resposta.status).toBe(201);
+    expect(resposta.body.calorias).toBeNull();
+
+    const get = await auth(request(app).get(`/receitas/${resposta.body.id}`));
+    expect(get.body.calorias).toBeNull();
+  });
+
+  test('POST persiste modo_preparo e imagem_url e o GET reflete', async () => {
+    const payload = umaReceita()
+      .comModoPreparo('1. Bata os ovos\n2. Frite')
+      .comImagem('https://exemplo/imagem.jpg')
+      .build();
+    const criada = await auth(request(app).post('/receitas')).send(payload);
+
+    expect(criada.status).toBe(201);
+    const get = await auth(request(app).get(`/receitas/${criada.body.id}`));
+    expect(get.body.modo_preparo).toBe('1. Bata os ovos\n2. Frite');
+    expect(get.body.imagem_url).toBe('https://exemplo/imagem.jpg');
+  });
+
+  test('POST com caderno_id de caderno inexistente retorna 400', async () => {
+    const payload = umaReceita().noCaderno(99999).build();
+    const resposta = await auth(request(app).post('/receitas')).send(payload);
+    expect(resposta.status).toBe(400);
+  });
+
+  test('POST vincula receita a um caderno do usuário e GET ?caderno filtra', async () => {
+    const caderno = await auth(request(app).post('/cadernos')).send({ nome: 'Fitness' });
+    const cadernoId = caderno.body.id;
+
+    await auth(request(app).post('/receitas')).send(umaReceita().comNome('Com caderno').noCaderno(cadernoId).build());
+    await auth(request(app).post('/receitas')).send(umaReceita().comNome('Sem caderno').build());
+
+    const doCaderno = await auth(request(app).get(`/receitas?caderno=${cadernoId}`));
+    expect(doCaderno.body.map((r) => r.nome)).toEqual(['Com caderno']);
+
+    const avulsas = await auth(request(app).get('/receitas?caderno=nenhum'));
+    expect(avulsas.body.map((r) => r.nome)).toEqual(['Sem caderno']);
   });
 });

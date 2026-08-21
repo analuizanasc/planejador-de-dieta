@@ -5,6 +5,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const AppError = require('../utils/AppError');
 const { validarReceitaPayload, validarCategoria } = require('../utils/validators');
 const repo = require('../repositories/receitasRepository');
+const cadernosRepo = require('../repositories/cadernosRepository');
 
 function parseId(valor) {
   const id = Number(valor);
@@ -12,6 +13,23 @@ function parseId(valor) {
     throw new AppError(400, 'id deve ser um número inteiro positivo');
   }
   return id;
+}
+
+// Traduz o filtro ?caderno= da query: 'nenhum' → receitas avulsas (null);
+// um id → aquele caderno; ausente → sem filtro (undefined).
+function parseFiltroCaderno(valor) {
+  if (valor === undefined) return undefined;
+  if (valor === 'nenhum') return null;
+  return parseId(valor);
+}
+
+// Garante que o caderno informado pertence ao usuário (RN7). Vínculo com
+// caderno de outro usuário (ou inexistente) é 400, não vaza existência.
+function garantirCadernoDoUsuario(db, usuarioId, caderno_id) {
+  if (caderno_id == null) return;
+  if (!cadernosRepo.buscarCadernoPorId(db, usuarioId, caderno_id)) {
+    throw new AppError(400, `caderno_id ${caderno_id} não encontrado`);
+  }
 }
 
 module.exports = function criarRotasReceitas(db) {
@@ -22,7 +40,8 @@ module.exports = function criarRotasReceitas(db) {
     asyncHandler(async (req, res) => {
       const { categoria } = req.query;
       if (categoria !== undefined) validarCategoria(categoria, 'categoria (query)');
-      res.json(repo.listarReceitas(db, req.usuarioId, { categoria }));
+      const caderno_id = parseFiltroCaderno(req.query.caderno);
+      res.json(repo.listarReceitas(db, req.usuarioId, { categoria, caderno_id }));
     })
   );
 
@@ -40,6 +59,7 @@ module.exports = function criarRotasReceitas(db) {
     '/',
     asyncHandler(async (req, res) => {
       const dados = validarReceitaPayload(req.body);
+      garantirCadernoDoUsuario(db, req.usuarioId, dados.caderno_id);
       const receita = repo.criarReceita(db, req.usuarioId, dados);
       res.status(201).json(receita);
     })
@@ -50,6 +70,7 @@ module.exports = function criarRotasReceitas(db) {
     asyncHandler(async (req, res) => {
       const id = parseId(req.params.id);
       const dados = validarReceitaPayload(req.body);
+      garantirCadernoDoUsuario(db, req.usuarioId, dados.caderno_id);
       const receita = repo.atualizarReceita(db, req.usuarioId, id, dados);
       if (!receita) throw new AppError(404, `Receita ${id} não encontrada`);
       res.json(receita);

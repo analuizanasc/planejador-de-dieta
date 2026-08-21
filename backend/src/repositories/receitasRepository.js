@@ -2,6 +2,10 @@
 
 function montarCompleta(db, row) {
   if (!row) return null;
+  const categorias = db
+    .prepare('SELECT categoria FROM receita_categorias WHERE receita_id = ? ORDER BY categoria')
+    .all(row.id)
+    .map((r) => r.categoria);
   const ingredientes = db
     .prepare('SELECT ingrediente FROM receita_ingredientes WHERE receita_id = ? ORDER BY ordem')
     .all(row.id)
@@ -13,21 +17,30 @@ function montarCompleta(db, row) {
 
   return {
     id: row.id,
+    caderno_id: row.caderno_id ?? null,
     nome: row.nome,
-    categoria: row.categoria,
-    calorias: row.calorias,
+    categorias,
+    calorias: row.calorias ?? null,
+    modo_preparo: row.modo_preparo ?? null,
+    imagem_url: row.imagem_url ?? null,
     ingredientes,
     tags_restricao,
     permite_repeticao: Boolean(row.permite_repeticao),
   };
 }
 
-function listarReceitas(db, usuarioId, { categoria } = {}) {
+function listarReceitas(db, usuarioId, { categoria, caderno_id } = {}) {
   let sql = 'SELECT * FROM receitas WHERE usuario_id = ?';
   const params = [usuarioId];
   if (categoria) {
-    sql += ' AND categoria = ?';
+    sql +=
+      ' AND EXISTS (SELECT 1 FROM receita_categorias rc WHERE rc.receita_id = receitas.id AND rc.categoria = ?)';
     params.push(categoria);
+  }
+  if (caderno_id !== undefined) {
+    // caderno_id === null → receitas sem caderno (avulsas).
+    sql += caderno_id === null ? ' AND caderno_id IS NULL' : ' AND caderno_id = ?';
+    if (caderno_id !== null) params.push(caderno_id);
   }
   sql += ' ORDER BY id';
   return db
@@ -45,10 +58,25 @@ function criarReceita(db, usuarioId, dados) {
   const tx = db.transaction((d) => {
     const info = db
       .prepare(
-        'INSERT INTO receitas (usuario_id, nome, categoria, calorias, permite_repeticao) VALUES (?, ?, ?, ?, ?)'
+        `INSERT INTO receitas
+           (usuario_id, caderno_id, nome, calorias, modo_preparo, imagem_url, permite_repeticao)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       )
-      .run(usuarioId, d.nome, d.categoria, d.calorias, d.permite_repeticao ? 1 : 0);
+      .run(
+        usuarioId,
+        d.caderno_id ?? null,
+        d.nome,
+        d.calorias ?? null,
+        d.modo_preparo ?? null,
+        d.imagem_url ?? null,
+        d.permite_repeticao ? 1 : 0
+      );
     const id = info.lastInsertRowid;
+
+    const inserirCategoria = db.prepare(
+      'INSERT INTO receita_categorias (receita_id, categoria) VALUES (?, ?)'
+    );
+    d.categorias.forEach((categoria) => inserirCategoria.run(id, categoria));
 
     const inserirIngrediente = db.prepare(
       'INSERT INTO receita_ingredientes (receita_id, ingrediente, ordem) VALUES (?, ?, ?)'
@@ -73,11 +101,28 @@ function atualizarReceita(db, usuarioId, id, dados) {
 
   const tx = db.transaction((d) => {
     db.prepare(
-      'UPDATE receitas SET nome = ?, categoria = ?, calorias = ?, permite_repeticao = ? WHERE id = ?'
-    ).run(d.nome, d.categoria, d.calorias, d.permite_repeticao ? 1 : 0, id);
+      `UPDATE receitas
+         SET caderno_id = ?, nome = ?, calorias = ?,
+             modo_preparo = ?, imagem_url = ?, permite_repeticao = ?
+       WHERE id = ?`
+    ).run(
+      d.caderno_id ?? null,
+      d.nome,
+      d.calorias ?? null,
+      d.modo_preparo ?? null,
+      d.imagem_url ?? null,
+      d.permite_repeticao ? 1 : 0,
+      id
+    );
 
+    db.prepare('DELETE FROM receita_categorias WHERE receita_id = ?').run(id);
     db.prepare('DELETE FROM receita_ingredientes WHERE receita_id = ?').run(id);
     db.prepare('DELETE FROM receita_restricoes WHERE receita_id = ?').run(id);
+
+    const inserirCategoria = db.prepare(
+      'INSERT INTO receita_categorias (receita_id, categoria) VALUES (?, ?)'
+    );
+    d.categorias.forEach((categoria) => inserirCategoria.run(id, categoria));
 
     const inserirIngrediente = db.prepare(
       'INSERT INTO receita_ingredientes (receita_id, ingrediente, ordem) VALUES (?, ?, ?)'

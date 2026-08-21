@@ -4,6 +4,8 @@
 // do backend (tests/integration/helpers/usuarios.js). Evita depender da UI
 // para preparar pré-condição, que é lento e frágil para isso.
 
+const { construirOpcoesDeReceita } = require('./receitasBuilder');
+
 const BASE_URL = 'http://localhost:3000';
 let contador = 0;
 
@@ -39,7 +41,15 @@ async function criarUsuariaAutenticada({ nome = 'Usuária E2E', senha = 'senha12
 }
 
 function criarReceita(token, dados) {
-  return requisitar('/receitas', { method: 'POST', body: dados, token });
+  // Normaliza o atalho `categoria` (string) para o formato atual `categorias` (array).
+  const corpo = { ...dados };
+  if (corpo.categoria && !corpo.categorias) corpo.categorias = [corpo.categoria];
+  delete corpo.categoria;
+  return requisitar('/receitas', { method: 'POST', body: corpo, token });
+}
+
+function criarCaderno(token, nome) {
+  return requisitar('/cadernos', { method: 'POST', body: { nome }, token });
 }
 
 function atualizarPreferencias(token, dados) {
@@ -50,4 +60,21 @@ function gerarCardapio(token, payload) {
   return requisitar('/cardapio/gerar', { method: 'POST', body: payload, token });
 }
 
-module.exports = { criarUsuariaAutenticada, criarReceita, atualizarPreferencias, gerarCardapio };
+// Popula um catálogo com várias opções por categoria de uma vez (ver Builder
+// em ./receitasBuilder). `definicoes` é uma lista de
+// { categoria, quantidade, caloriasBase?, tagsRestricao? }.
+function criarCatalogo(token, definicoes) {
+  const receitas = definicoes.flatMap(({ categoria, quantidade, caloriasBase, tagsRestricao }) =>
+    construirOpcoesDeReceita(categoria, quantidade, { caloriasBase, tagsRestricao })
+  );
+  return Promise.all(receitas.map((receita) => criarReceita(token, receita)));
+}
+
+module.exports = {
+  criarUsuariaAutenticada,
+  criarReceita,
+  criarCaderno,
+  atualizarPreferencias,
+  gerarCardapio,
+  criarCatalogo,
+};

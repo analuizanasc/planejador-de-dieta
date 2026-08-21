@@ -1,6 +1,10 @@
 'use strict';
 
-const { criarYoutubeFetcher, extrairVideoId } = require('../../src/services/youtubeFetcher');
+const {
+  criarYoutubeFetcher,
+  extrairVideoId,
+  melhorThumbnail,
+} = require('../../src/services/youtubeFetcher');
 
 function ok(json) {
   return { ok: true, json: async () => json };
@@ -48,12 +52,41 @@ describe('criarYoutubeFetcher.buscar', () => {
     expect(r).toBeNull();
   });
 
-  test('retorna título e descrição do snippet', async () => {
-    const fetchFn = jest
-      .fn()
-      .mockResolvedValue(ok({ items: [{ snippet: { title: 'Bolo', description: '2 ovos\n1 xícara' } }] }));
+  test('retorna título, descrição e a maior thumbnail do snippet', async () => {
+    const snippet = {
+      title: 'Bolo',
+      description: '2 ovos\n1 xícara',
+      thumbnails: {
+        default: { url: 'http://i/d.jpg' },
+        high: { url: 'http://i/h.jpg' },
+      },
+    };
+    const fetchFn = jest.fn().mockResolvedValue(ok({ items: [{ snippet }] }));
     const r = await criarYoutubeFetcher({ apiKey: 'k', fetchFn }).buscar(URL);
-    expect(r).toEqual({ titulo: 'Bolo', descricao: '2 ovos\n1 xícara' });
+    expect(r).toEqual({ titulo: 'Bolo', descricao: '2 ovos\n1 xícara', imagem: 'http://i/h.jpg' });
     expect(fetchFn.mock.calls[0][0]).toContain('id=abc123XY');
+  });
+
+  test('sem thumbnails no snippet, imagem vem null', async () => {
+    const fetchFn = jest.fn().mockResolvedValue(ok({ items: [{ snippet: { title: 'X' } }] }));
+    const r = await criarYoutubeFetcher({ apiKey: 'k', fetchFn }).buscar(URL);
+    expect(r.imagem).toBeNull();
+  });
+});
+
+describe('melhorThumbnail', () => {
+  test('prefere a maior resolução disponível', () => {
+    expect(
+      melhorThumbnail({ default: { url: 'd' }, medium: { url: 'm' }, maxres: { url: 'X' } })
+    ).toBe('X');
+  });
+
+  test('cai para a próxima resolução quando a maior não existe', () => {
+    expect(melhorThumbnail({ default: { url: 'd' }, medium: { url: 'm' } })).toBe('m');
+  });
+
+  test('retorna null quando não há thumbnails', () => {
+    expect(melhorThumbnail(undefined)).toBeNull();
+    expect(melhorThumbnail({})).toBeNull();
   });
 });

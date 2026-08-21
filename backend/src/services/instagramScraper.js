@@ -86,6 +86,7 @@ function criarInstagramScraper({ fetchFn = fetch } = {}) {
     const legenda = lerMeta(html, 'og:description') || lerMeta(html, 'description') || '';
     const titulo = lerMeta(html, 'og:title') || '';
     const urlVideo = lerMeta(html, 'og:video') || lerMeta(html, 'og:video:secure_url') || null;
+    const imagem = lerMeta(html, 'og:image') || null;
 
     if (!legenda && !titulo && !urlVideo) {
       throw new AppError(
@@ -94,7 +95,7 @@ function criarInstagramScraper({ fetchFn = fetch } = {}) {
       );
     }
 
-    return { legenda, titulo, urlVideo };
+    return { legenda, titulo, urlVideo, imagem };
   }
 
   return { buscarPost };

@@ -117,13 +117,14 @@ function normalizar(post) {
   const legenda = typeof post.caption === 'string' ? post.caption : '';
   const titulo = post.ownerUsername ? `@${post.ownerUsername}` : '';
   const urlVideo = post.videoUrl || null;
+  const imagem = post.displayUrl || null;
   const comentarios = Array.isArray(post.latestComments)
     ? post.latestComments
         .map((c) => (c && typeof c.text === 'string' ? c.text : null))
         .filter(Boolean)
     : [];
 
-  return { legenda, titulo, urlVideo, comentarios };
+  return { legenda, titulo, urlVideo, imagem, comentarios };
 }
 
 module.exports = { criarApifyFetcher };

@@ -5,6 +5,7 @@ const errorHandler = require('./middlewares/errorHandler');
 const autenticar = require('./middlewares/auth');
 const criarRotasAuth = require('./routes/auth');
 const criarRotasReceitas = require('./routes/receitas');
+const criarRotasCadernos = require('./routes/cadernos');
 const criarRotasImportacaoReceitas = require('./routes/receitasImportacao');
 const criarRotasPreferencias = require('./routes/preferencias');
 const criarRotasCardapio = require('./routes/cardapio');
@@ -22,6 +23,7 @@ function criarApp(db, opcoes = {}) {
     autenticar,
     criarRotasImportacaoReceitas(db, opcoes.importadorDeps)
   );
+  app.use('/cadernos', autenticar, criarRotasCadernos(db));
   app.use('/receitas', autenticar, criarRotasReceitas(db));
   app.use('/preferencias', autenticar, criarRotasPreferencias(db));
   app.use('/cardapio', autenticar, criarRotasCardapio(db));

@@ -6,8 +6,11 @@ class ReceitaBuilder {
   constructor() {
     this.payload = {
       nome: 'Receita de teste',
-      categoria: 'cafe',
+      categorias: ['cafe'],
       calorias: 300,
+      modo_preparo: null,
+      imagem_url: null,
+      caderno_id: null,
       ingredientes: ['ingrediente'],
       tags_restricao: [],
       permite_repeticao: false,
@@ -20,12 +23,37 @@ class ReceitaBuilder {
   }
 
   comCategoria(categoria) {
-    this.payload.categoria = categoria;
+    this.payload.categorias = [categoria];
+    return this;
+  }
+
+  comCategorias(categorias) {
+    this.payload.categorias = categorias;
     return this;
   }
 
   comCalorias(calorias) {
     this.payload.calorias = calorias;
+    return this;
+  }
+
+  semCalorias() {
+    this.payload.calorias = null;
+    return this;
+  }
+
+  comModoPreparo(modo) {
+    this.payload.modo_preparo = modo;
+    return this;
+  }
+
+  comImagem(url) {
+    this.payload.imagem_url = url;
+    return this;
+  }
+
+  noCaderno(id) {
+    this.payload.caderno_id = id;
     return this;
   }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CategoriaSelo } from './CategoriaSelo';
-import { Select } from './Select';
+import { ComboBox } from './ComboBox';
 import styles from './CelulaCardapio.module.css';
 
 // A célula guarda a assinatura visual do produto: sublinhado ondulado quando
@@ -25,11 +25,11 @@ export function CelulaCardapio({ dia, categoria, entrada, motivoErro, opcoesRece
   if (editando) {
     return (
       <div className={styles.celula} data-testid={testId}>
-        <Select
+        <ComboBox
           valor={entrada?.receita.id}
           aoMudar={aoEscolher}
           opcoes={opcoesReceita}
-          placeholder={salvando ? 'Salvando…' : 'Escolher receita'}
+          placeholder={salvando ? 'Salvando…' : 'Buscar receita ou caderno…'}
           desabilitado={salvando}
         />
       </div>
@@ -61,7 +61,9 @@ export function CelulaCardapio({ dia, categoria, entrada, motivoErro, opcoesRece
       >
         {entrada.receita.nome}
       </span>
-      <span className={`numero-caloria ${styles.calorias}`}>{entrada.receita.calorias} kcal</span>
+      {entrada.receita.calorias != null && (
+        <span className={`numero-caloria ${styles.calorias}`}>{entrada.receita.calorias} kcal</span>
+      )}
     </button>
   );
 }

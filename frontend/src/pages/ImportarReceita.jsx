@@ -6,6 +6,7 @@ import { Botao } from '../components/Botao';
 import { Alerta } from '../components/Alerta';
 import { EstadoCarregando } from '../components/EstadoCarregando';
 import { ReceitaForm } from '../components/ReceitaForm';
+import { useCadernos } from '../hooks/useCadernos';
 import { importarReceitaDoInstagram } from '../api/receitasImportacao';
 import { criarReceita } from '../api/receitas';
 import styles from './ImportarReceita.module.css';
@@ -21,6 +22,7 @@ const MENSAGEM_FONTE = {
 
 export function ImportarReceita() {
   const navigate = useNavigate();
+  const { cadernos } = useCadernos();
   const [url, setUrl] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -90,14 +92,20 @@ export function ImportarReceita() {
             </Alerta>
           )}
 
-          {carregando ? (
-            <EstadoCarregando texto="Buscando e analisando o post… isso pode levar alguns instantes." />
-          ) : (
-            <div className={styles.acoes}>
-              <Botao type="submit">Analisar link</Botao>
-            </div>
-          )}
+          <div className={styles.acoes}>
+            <Botao type="submit" disabled={carregando}>
+              Analisar link
+            </Botao>
+          </div>
         </form>
+      )}
+
+      {carregando && (
+        <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Analisando link">
+          <div className={styles.dialog}>
+            <EstadoCarregando texto="Buscando e analisando o post… isso pode levar alguns instantes." />
+          </div>
+        </div>
       )}
 
       {resultado && (
@@ -112,7 +120,12 @@ export function ImportarReceita() {
             </Alerta>
           ))}
 
-          <ReceitaForm receitaInicial={resultado.draft} aoSalvar={salvar} aoCancelar={recomecar} />
+          <ReceitaForm
+            receitaInicial={resultado.draft}
+            cadernos={cadernos}
+            aoSalvar={salvar}
+            aoCancelar={recomecar}
+          />
         </div>
       )}
     </div>

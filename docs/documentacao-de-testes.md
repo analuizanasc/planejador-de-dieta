@@ -16,7 +16,7 @@
 ### 1.2 Escopo
 
 **Dentro do escopo:**
-- Camada de validação de entrada .
+- Camada de validação de entrada.
 - API REST completa: `/auth`, `/receitas`, `/preferencias`, `/cardapio`.
 - Autenticação JWT e isolamento de dados entre usuários (multiusuário).
 - Contrato de resposta de cada endpoint (schema, tipos, campos obrigatórios).
@@ -26,7 +26,7 @@
 - Testes de carga/performance sob concorrência real (múltiplos usuários simultâneos).
 - Testes de acessibilidade (a11y) e cross-browser além do Chromium usado pelo Playwright.
 - Testes de segurança ofensivos (pentest, fuzzing de payloads maliciosos além de validação de schema).
-- Fluxo E2E completo ponta a ponta (login → cadastro de receitas → preferências → geração → edição → visão mensal) — deliberadamente reduzido aos 3 cenários de maior risco/valor (ver seção 1.3 e §7).
+- Fluxo E2E completo ponta a ponta (login → cadastro de receitas → preferências → geração → edição → visão mensal) — deliberadamente reduzido aos 3 cenários de maior risco/valor (ver seção 1.3 e §2.5).
 
 ### 1.3 Técnicas aplicadas por camada
 
@@ -34,14 +34,14 @@
 |---|---|---|
 | Unitário | Cobertura de sentença e decisão | `geradorCardapio.js` e `validators.js` têm threshold de 90% (statements/branches/functions/lines) configurado em `backend/jest.config.js`; todo `if`/ramo de decisão do algoritmo e dos validadores tem um teste dedicado a cada lado da decisão. |
 | Unitário | Particionamento de equivalência + Análise de Valor Limite (AVL) | Aplicado sistematicamente em `validators.test.js` (ex.: `calorias = -1` inválido / `0` válido; `senha` com 7 vs. 8 caracteres; `meta_calorica` com `0` vs. `1`). |
-| Integração | Heurística **VADER** (Verbs, Authorization, Data, Errors, Responsiveness) | Ver detalhamento em §5. |
+| Integração | Heurística **VADER** (Verbs, Authorization, Data, Errors, Responsiveness) | Ver detalhamento em §2.3. |
 | Integração | Regras de negócio pela camada de API | Cada RN1–RN5 tem pelo menos um teste de integração equivalente ao teste unitário, provando que a regra sobrevive à composição rota→repositório→SQLite. |
 | Contrato | Verificação de schema (chaves exatas + tipos) | `backend/tests/contract/helpers/contractMatchers.js` — matchers hand-rolled que verificam `Object.keys(...).sort()` e `typeof` de cada campo. |
 | E2E | Cenário de maior risco/valor (não fluxo completo) | Playwright dirigindo a UI real contra o backend real, focando nos 3 pontos onde uma falha teria maior impacto no usuário. |
 
 ---
 
-## 2. Plano de Testes — casos mapeados por técnica e regra de negócio
+## 2. Plano de Testes 
 
 ### 2.1 Regras de negócio cobertas
 
@@ -59,48 +59,13 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | RN8 | Integridade referencial: não é possível excluir uma receita referenciada no cardápio |
 | RN9 | Toda entrada de cardápio rastreia sua origem (`gerado` vs. `manual`) |
 
----
-
-## 3. Matriz de Rastreabilidade (caso de teste → regra de negócio)
-
-**Legenda —** camada: Unitário · Integração · Contrato · E2E
-**Cobertura da célula:**
-🟢 **exaustiva** — todas as partições de negócio da regra são exercitadas nessa camada
-🟡 **parcial** — pelo menos uma partição é testada, mas não todas
-⚪ **não coberta / não se aplica** — nenhum teste dessa camada exercita a regra, ou a camada não é o lugar certo para testá-la
-
-> O contrato testa **schema** da resposta (chaves/tipos), não a lógica das regras. Por isso ele só aparece 🟢 quando existe uma asserção específica de contrato para aquele campo (ex.: enum de `origem`, schema do array `erros`) — não sempre que o endpoint é chamado sob aquele RN.
-
-| RN | Unitário | Integração | Contrato | E2E |
-|---|---|---|---|---|
-| **RN1** não repetição em dias consecutivos | 🟢 UT-G08, 09, 21, 22 | 🟡 IT-CARD-01¹ | ⚪ — | 🟡 E2E-03¹ |
-| **RN2** categorias obrigatórias/opcionais | 🟢 UT-G18–20, 23, 29 | 🟡 IT-CARD-03, 04 | ⚪ — | 🟡 E2E-01 |
-| **RN3** compatibilidade com restrições | 🟢 UT-G01–05, 07 | 🟡 IT-CARD-05 | ⚪ — | 🟡 E2E-01 |
-| **RN4** meta calórica sem ultrapassar | 🟢 UT-G13–17, 24 | 🟢 IT-CARD-06, 07 | ⚪ — | 🟡 E2E-01 |
-| **RN5** erro claro sem receita compatível | 🟢 UT-G25 | 🟢 IT-CARD-02, 08 | 🟢 CT-06 | ⚪ — |
-| **RN6** autenticação obrigatória | ⚪ — | 🟢 IT-AUTZ-01–07 | 🟢 CT-09 | ⚪ — |
-| **RN7** isolamento entre usuários | ⚪ — | 🟢 IT-AUTZ-08–13 | ⚪ — | ⚪ — |
-| **RN8** integridade referencial | ⚪ — | 🟢 IT-REC-09 | ⚪ — | ⚪ — |
-| **RN9** origem gerado/manual | ⚪ — | 🟢 IT-CARD-14–17 | 🟢 CT-06, 07, 08 | 🟡 E2E-02² |
-| Validação `/receitas` | 🟢 UT-V16–30 | 🟡 IT-REC-11³ | 🟢 CT-09 | ⚪ — |
-| Validação `/preferencias` | 🟢 UT-V31–40 | 🟡 IT-PREF-05³ | 🟢 CT-09 | ⚪ — |
-| Validação `/auth` | 🟢 UT-V41–51 | 🟡 IT-AUTH-03³ | 🟢 CT-01 | ⚪ — |
-| Cálculo semana/mês (`datas.js`) | ⚪ —⁴ | 🟡 IT-CARD-13, 23–25⁴ | 🟢 CT-07 | ⚪ — |
-
-¹ Cobre só a partição "sem `permite_repeticao` não repete"; a exceção (`permite_repeticao=true` permite repetir) só é verificada no unitário (UT-G09) — nenhum teste de integração ou E2E confirma a repetição realmente acontecendo.
-² Cobre os estados "gerado" e "manual", mas não a transição de volta para "gerado" ao regenerar sobre uma edição manual (essa transição só é testada na integração, IT-CARD-17).
-³ Confirma apenas que o validador está "plugado" na rota (um caso de payload inválido → 400); as demais partições de validação são responsabilidade do unitário, deliberadamente não repetidas aqui.
-⁴ `datas.js` não tem suíte unitária própria, e o branch de `mes` em formato inválido não é testado em nenhuma camada — gaps reais, ver §4.3.
-
----
-
-## 4. Casos Unitários — sentenças e decisões cobertas
+### 2.2 Casos Unitários — sentenças e decisões cobertas
 
 **Tipo de caso (todas as linhas abaixo são testes que existem):** 🟢 caminho feliz · 🟡 partição inválida (entrada bem formada, mas fora do domínio aceito — formato, faixa, enum ou uma regra de negócio RN1–RN9) · 🔵 robustez (entrada malformada: corpo nulo, tipo errado, campo obrigatório ausente)
 
-### 4.1 `geradorCardapio.js`
+#### 2.2.1 `geradorCardapio.js`
 
-#### `receitaCompativel` (RN3)
+##### `receitaCompativel` (RN3)
 
 | ID | Caso |
 |---|---|
@@ -110,7 +75,7 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | 🔵 UT-G04 | `restricoesUsuario` ausente (`undefined`) tratado como `[]` |
 | 🔵 UT-G05 | Receita sem campo `tags_restricao` tratada como `[]` |
 
-#### `filtrarCandidatas`
+##### `filtrarCandidatas`
 
 | ID | Caso |
 |---|---|
@@ -119,7 +84,7 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | 🟡 UT-G08 | Exclui a usada ontem sem `permite_repeticao` (RN1) |
 | 🟢 UT-G09 | Inclui a usada ontem com `permite_repeticao` (RN1, exceção) |
 
-#### `selecionarSemMeta` (critério de variedade/LRU, suporte a RN1)
+##### `selecionarSemMeta` (critério de variedade/LRU, suporte a RN1)
 
 | ID | Caso |
 |---|---|
@@ -127,7 +92,7 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | 🟢 UT-G11 | Empate de último uso → desempate por menor contagem |
 | 🟢 UT-G12 | Empate total → desempate por menor id |
 
-#### `selecionarComMeta` (RN4) — tabela de decisão sobre soma × meta
+##### `selecionarComMeta` (RN4) — tabela de decisão sobre soma × meta
 
 | ID | Caso |
 |---|---|
@@ -137,7 +102,7 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | 🟢 UT-G16 | Maior total ≤ meta é achado mesmo com somas fora de ordem crescente no `Map` |
 | 🟢 UT-G17 | Empate de soma total → mantém a primeira combinação encontrada |
 
-#### `resolverCategoriasAtivas` (RN2)
+##### `resolverCategoriasAtivas` (RN2)
 
 | ID | Caso |
 |---|---|
@@ -145,7 +110,7 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | 🟢 UT-G19 | Usa array customizado quando informado |
 | 🟡 UT-G20 | Lança erro com categoria inválida no array |
 
-#### `gerarCardapio` — integração das regras (RN1–RN5) em nível de função pura
+##### `gerarCardapio` — integração das regras (RN1–RN5) em nível de função pura
 
 | ID | Caso | RN |
 |---|---|---|
@@ -161,9 +126,9 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 
 *(29 casos, arquivo `backend/tests/unit/geradorCardapio.test.js`.)*
 
-### 4.2 `validators.js`
+#### 2.2.2 `validators.js`
 
-#### `isDataValida` / `validarData`
+##### `isDataValida` / `validarData`
 
 | ID | Caso |
 |---|---|
@@ -174,7 +139,7 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | 🟢 UT-V05 | `validarData` retorna o valor quando válido |
 | 🟡 UT-V06 | `validarData` lança `AppError` 400 citando o campo |
 
-#### `validarCategoria`
+##### `validarCategoria`
 
 | ID | Caso |
 |---|---|
@@ -182,7 +147,7 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | 🟡 UT-V08 | Rejeita categoria inválida (`brunch`) |
 | 🟡 UT-V09 | Rejeita string vazia |
 
-#### `validarArrayDeStrings`
+##### `validarArrayDeStrings`
 
 | ID | Caso |
 |---|---|
@@ -193,7 +158,7 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | 🟡 UT-V14 | Rejeita valor fora da lista de aceitos |
 | 🟢 UT-V15 | Aceita array válido dentro dos aceitos |
 
-#### `validarReceitaPayload` (payload completo, `parcial=false`)
+##### `validarReceitaPayload` (payload completo, `parcial=false`)
 
 | ID | Caso |
 |---|---|
@@ -212,13 +177,13 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | 🔵 UT-V28 | Rejeita `permite_repeticao` não-boolean |
 | 🟢 UT-V29 | Converte `permite_repeticao` ausente para `false` |
 
-#### `validarReceitaPayload` (payload parcial)
+##### `validarReceitaPayload` (payload parcial)
 
 | ID | Caso |
 |---|---|
 | 🟢 UT-V30 | Permite payload com apenas 1 campo quando `parcial=true` |
 
-#### `validarPreferenciasPayload`
+##### `validarPreferenciasPayload`
 
 | ID | Caso |
 |---|---|
@@ -233,7 +198,7 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | 🟢 UT-V39 | Aceita `meta_calorica = null` (limpa a meta) |
 | 🔵 UT-V40 | Rejeita `meta_calorica` não numérica |
 
-#### `validarRegistroPayload`
+##### `validarRegistroPayload`
 
 | ID | Caso |
 |---|---|
@@ -245,7 +210,7 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 | 🟢 UT-V46 | Aceita senha com 8 caracteres (fronteira mínima válida) |
 | 🟡 UT-V47 | Rejeita nome vazio/só espaços |
 
-#### `validarLoginPayload`
+##### `validarLoginPayload`
 
 | ID | Caso |
 |---|---|
@@ -256,17 +221,15 @@ As RN1–RN5 são as regras de negócio formais definidas no plano de execução
 
 *(51 casos, arquivo `backend/tests/unit/validators.test.js`.)*
 
-### 4.3 Gap identificado
+#### 2.2.3 Gap identificado
 
 `backend/src/utils/datas.js` (cálculo de semana ISO e mês) não tem suíte unitária própria — hoje só é exercitado indiretamente pela integração: `somarDias` via IT-CARD-13, `inicioFimSemana` via IT-CARD-23/24 e `inicioFimMes` via IT-CARD-25. Como é lógica pura de datas com casos de fronteira relevantes (ano bissexto, virada de mês/ano, domingo como fim de semana), recomenda-se criar `backend/tests/unit/datas.test.js` dedicado.
 
 Além disso, o branch de validação de `inicioFimMes` (`AppError` quando `mes` não está no formato `YYYY-MM`) não tem **nenhum** teste, em nenhuma camada — é um gap real a fechar, não só uma preferência de organização.
 
----
+### 2.3 Casos de Integração — heurística VADER + regras de negócio
 
-## 5. Casos de Integração — heurística VADER + regras de negócio
-
-### 5.1 `/auth` — `backend/tests/integration/auth.test.js`
+#### 2.3.1 `/auth` — `backend/tests/integration/auth.test.js`
 
 | ID | Verbo | VADER | Caso |
 |---|---|---|---|
@@ -278,7 +241,7 @@ Além disso, o branch de validação de `inicioFimMes` (`AppError` quando `mes` 
 | IT-AUTH-06 | POST `/auth/login` | Errors | Senha errada → 401, mensagem genérica |
 | IT-AUTH-07 | POST `/auth/login` | Errors | Email inexistente → 401, **mesma** mensagem genérica (não vaza quais emails existem) |
 
-### 5.2 Autorização — `backend/tests/integration/autorizacao.test.js`
+#### 2.3.2 Autorização — `backend/tests/integration/autorizacao.test.js`
 
 | ID | VADER | RN | Caso |
 |---|---|---|---|
@@ -294,7 +257,7 @@ Além disso, o branch de validação de `inicioFimMes` (`AppError` quando `mes` 
 | IT-AUTZ-12 | Authorization | RN7 | Cardápio gerado por A não aparece na consulta de B |
 | IT-AUTZ-13 | Authorization | RN7 | B não edita cardápio referenciando receita de A → 404 |
 
-### 5.3 `/receitas` — `backend/tests/integration/receitas.test.js`
+#### 2.3.3 `/receitas` — `backend/tests/integration/receitas.test.js`
 
 | ID | Verbo | VADER | RN | Caso |
 |---|---|---|---|---|
@@ -310,7 +273,7 @@ Além disso, o branch de validação de `inicioFimMes` (`AppError` quando `mes` 
 | IT-REC-10 | DELETE | Errors | — | Id inexistente → 404 |
 | IT-REC-11 | POST | Data + Errors | — | Payload sem `nome` → 400 (confirma wiring do validator na rota) |
 
-### 5.4 `/preferencias` — `backend/tests/integration/preferencias.test.js`
+#### 2.3.4 `/preferencias` — `backend/tests/integration/preferencias.test.js`
 
 | ID | Verbo | VADER | RN | Caso |
 |---|---|---|---|---|
@@ -321,7 +284,7 @@ Além disso, o branch de validação de `inicioFimMes` (`AppError` quando `mes` 
 | IT-PREF-05 | PUT | Errors | — | Corpo vazio → 400 |
 | IT-PREF-06 | PUT | Data | RN4 | `meta_calorica: null` limpa meta previamente definida |
 
-### 5.5 `/cardapio` — `backend/tests/integration/cardapio.test.js`
+#### 2.3.5 `/cardapio` — `backend/tests/integration/cardapio.test.js`
 
 **POST /cardapio/gerar**
 
@@ -368,9 +331,7 @@ Além disso, o branch de validação de `inicioFimMes` (`AppError` quando `mes` 
 
 *(Total: 26 casos de integração só em `/cardapio`, arquivo `backend/tests/integration/cardapio.test.js`.)*
 
----
-
-## 6. Casos de Contrato — por endpoint
+### 2.4 Casos de Contrato — por endpoint
 
 Fonte: `backend/tests/contract/contrato.test.js` + `backend/tests/contract/helpers/contractMatchers.js`.
 
@@ -388,9 +349,7 @@ Fonte: `backend/tests/contract/contrato.test.js` + `backend/tests/contract/helpe
 
 *(9 casos. O matcher `assertReceitaShape` é reutilizado por `assertCardapioEntradaShape`, então qualquer regressão no schema de receita é detectada em ambos os contextos — cardápio e listagem direta.)*
 
----
-
-## 7. Casos E2E — por fluxo do usuário
+### 2.5 Casos E2E — por fluxo do usuário
 
 Fonte: `e2e/tests/*.spec.js` (Playwright). Os 3 cenários foram escolhidos deliberadamente como os de maior risco/valor, **não** um fluxo completo ponta a ponta — decisão já registrada nos comentários dos próprios specs.
 
@@ -400,7 +359,7 @@ Fonte: `e2e/tests/*.spec.js` (Playwright). Os 3 cenários foram escolhidos delib
 | E2E-02 | `edicao-manual-cardapio.spec.js` | Edição manual persistente através de reload real | RN9 | 1. Trocar a receita via dropdown atualiza a célula e marca `origem="manual"` (sublinhado ondulado). 2. Após `page.reload()` real, receita, `data-origem="manual"` e sublinhado continuam idênticos. |
 | E2E-03 | `nao-repeticao-consecutiva.spec.js` | Não repetição em dias consecutivos, na grade real | RN1 | Nas 7 células de café da semana gerada, nenhuma repete a receita do dia imediatamente anterior. |
 
-### 7.1 Fluxos de usuário não cobertos por E2E (fora do escopo atual)
+#### 2.5.1 Fluxos de usuário não cobertos por E2E (fora do escopo atual)
 
 - Cadastro/edição/remoção de receita pela UI (coberto só via API nos helpers de setup dos specs, não pela interface).
 - Tela de preferências (só é acionada via helper `atualizarPreferencias`, chamando a API diretamente — não há clique real na UI de preferências).
@@ -411,7 +370,40 @@ Essas lacunas são aceitáveis dado o critério explícito de "cenários de maio
 
 ---
 
-## 8. Resumo quantitativo
+## 3. Matriz de Rastreabilidade (caso de teste → regra de negócio)
+
+**Legenda —** camada: Unitário · Integração · Contrato · E2E
+**Cobertura da célula:**
+🟢 **exaustiva** — todas as partições de negócio da regra são exercitadas nessa camada
+🟡 **parcial** — pelo menos uma partição é testada, mas não todas
+⚪ **não coberta / não se aplica** — nenhum teste dessa camada exercita a regra, ou a camada não é o lugar certo para testá-la
+
+> O contrato testa **schema** da resposta (chaves/tipos), não a lógica das regras. Por isso ele só aparece 🟢 quando existe uma asserção específica de contrato para aquele campo (ex.: enum de `origem`, schema do array `erros`) — não sempre que o endpoint é chamado sob aquele RN.
+
+| RN | Unitário | Integração | Contrato | E2E |
+|---|---|---|---|---|
+| **RN1** não repetição em dias consecutivos | 🟢 UT-G08, 09, 21, 22 | 🟡 IT-CARD-01¹ | ⚪ — | 🟡 E2E-03¹ |
+| **RN2** categorias obrigatórias/opcionais | 🟢 UT-G18–20, 23, 29 | 🟡 IT-CARD-03, 04 | ⚪ — | 🟡 E2E-01 |
+| **RN3** compatibilidade com restrições | 🟢 UT-G01–05, 07 | 🟡 IT-CARD-05 | ⚪ — | 🟡 E2E-01 |
+| **RN4** meta calórica sem ultrapassar | 🟢 UT-G13–17, 24 | 🟢 IT-CARD-06, 07 | ⚪ — | 🟡 E2E-01 |
+| **RN5** erro claro sem receita compatível | 🟢 UT-G25 | 🟢 IT-CARD-02, 08 | 🟢 CT-06 | ⚪ — |
+| **RN6** autenticação obrigatória | ⚪ — | 🟢 IT-AUTZ-01–07 | 🟢 CT-09 | ⚪ — |
+| **RN7** isolamento entre usuários | ⚪ — | 🟢 IT-AUTZ-08–13 | ⚪ — | ⚪ — |
+| **RN8** integridade referencial | ⚪ — | 🟢 IT-REC-09 | ⚪ — | ⚪ — |
+| **RN9** origem gerado/manual | ⚪ — | 🟢 IT-CARD-14–17 | 🟢 CT-06, 07, 08 | 🟡 E2E-02² |
+| Validação `/receitas` | 🟢 UT-V16–30 | 🟡 IT-REC-11³ | 🟢 CT-09 | ⚪ — |
+| Validação `/preferencias` | 🟢 UT-V31–40 | 🟡 IT-PREF-05³ | 🟢 CT-09 | ⚪ — |
+| Validação `/auth` | 🟢 UT-V41–51 | 🟡 IT-AUTH-03³ | 🟢 CT-01 | ⚪ — |
+| Cálculo semana/mês (`datas.js`) | ⚪ —⁴ | 🟡 IT-CARD-13, 23–25⁴ | 🟢 CT-07 | ⚪ — |
+
+¹ Cobre só a partição "sem `permite_repeticao` não repete"; a exceção (`permite_repeticao=true` permite repetir) só é verificada no unitário (UT-G09) — nenhum teste de integração ou E2E confirma a repetição realmente acontecendo.
+² Cobre os estados "gerado" e "manual", mas não a transição de volta para "gerado" ao regenerar sobre uma edição manual (essa transição só é testada na integração, IT-CARD-17).
+³ Confirma apenas que o validador está "plugado" na rota (um caso de payload inválido → 400); as demais partições de validação são responsabilidade do unitário, deliberadamente não repetidas aqui.
+⁴ `datas.js` não tem suíte unitária própria, e o branch de `mes` em formato inválido não é testado em nenhuma camada — gaps reais, ver §2.2.3.
+
+---
+
+## 4. Resumo quantitativo
 
 | Camada | Arquivos | Casos |
 |---|---|---|
@@ -432,3 +424,20 @@ pie showData title Casos de teste por camada (157 total)
 ```
 
 Cobertura de sentença/decisão exigida no CI: ≥ 90% em `geradorCardapio.js` e `validators.js` (`backend/jest.config.js`), com relatório publicado como artefato (`coverage-report`) a cada execução do workflow `Testes` (`.github/workflows/tests.yml`).
+
+---
+
+## 5. Fase 2 — Melhorias (novas regras e cobertura)
+
+Regras de negócio adicionadas nesta fase, com a camada que as cobre:
+
+| ID | Regra | Cobertura |
+|---|---|---|
+| RN10 | `calorias` deixou de ser obrigatória: ausente/`null` é aceito e persistido como `null` (card mostra "sem calorias") | Unitário (`validators.test.js`: `null`, ausente, `0`, `-1`), Integração (`receitas.test.js`: POST sem calorias), Contrato (`calorias` = número \| `null`), E2E |
+| RN11 | Receita passa a ter `modo_preparo` (passo a passo) e `imagem_url`, ambos opcionais; a importação de vídeo captura imagem (Instagram `og:image` / Apify `displayUrl` / thumbnail do YouTube) e o passo a passo (schema do Gemini) | Unitário (`validators`, `youtubeFetcher.melhorThumbnail`, `importadorReceitaInstagram` repasse de imagem IG/YouTube), Integração (POST persiste `modo_preparo`/`imagem_url`), Contrato |
+| RN12 | Receitas organizáveis em **cadernos** (pastas) escopados por usuário; uma receita só vincula a caderno do próprio usuário (RN7); apagar um caderno desvincula as receitas (`ON DELETE SET NULL`), não as apaga | Unitário (`validarCadernoPayload`), Integração (`cadernos.test.js`: CRUD, VADER, isolamento, vínculo cruzado → 400, delete desvincula; `receitas.test.js`: filtro `?caderno=`), Contrato (`assertCadernoShape`), E2E |
+| RN13 | Uma receita pode pertencer a **várias categorias** (`categorias: string[]`, mín. 1, sem duplicata). `receitas.categoria` (coluna única) virou a tabela N:N `receita_categorias`; o gerador considera a receita candidata em qualquer categoria que ela contenha (`categorias.includes`); a edição manual do cardápio aceita a receita se a categoria do slot estiver entre as dela | Unitário (`validators`: vazio/enum/dedup; `geradorCardapio`: candidata em 2 categorias), Integração (`receitas.test.js`: cria com 2 categorias e filtra por cada uma; `cardapio.test.js`: mensagem de categoria incompatível), Contrato (`categorias` array não-vazio), E2E (marca Café+Lanche e confere os 2 selos) |
+
+Feature de UI **ingredientes em campos individuais** (Enter cria o próximo campo) e o cadastro sem calorias/em caderno são exercitados de ponta a ponta em `e2e/tests/cadastro-receita-com-caderno-e-sem-calorias.spec.js` (o antigo textarea único deu lugar a um campo por ingrediente — helper `preencherIngredientes` em `e2e/tests/helpers/formularioReceita.js`).
+
+Contagem após a fase 2: **266 casos** no backend (Jest) — 90 unitário, 76 integração (inclui `cadernos.test.js`), 10 contrato — e **6 specs** E2E (Playwright). Migração idempotente em `connection.js` reconstrói `receitas` uma única vez (preservando os dados) para tornar `calorias` opcional e adicionar `caderno_id`/`modo_preparo`/`imagem_url`, e cria a tabela `cadernos`.
